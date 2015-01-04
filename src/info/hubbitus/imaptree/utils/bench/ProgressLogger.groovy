@@ -10,7 +10,7 @@ import groovy.text.Template
  *		ProgressLogger.each([1, 2, 3, 4, 5]){
  *		println it // Some long run operation
  * }
- * It will produce (by plintln) output like:
+ * It will produce (by println) output like:
  *	Process Integer #1 from 5 (20,00%). Spent (pack 1 elements) time: 0,041 (from start: 0,047)
  *	1
  *	Process Integer #2 from 5 (40,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,278), Estimated items: 3, time: 0,417
@@ -37,8 +37,21 @@ import groovy.text.Template
  *				commonErrorAdd(di, ae);
  *			}
  *		}
-  * 4) Ore measure one run:
+ * 4) Ore measure one run:
  *	ProgressLogger.measure({log.info(it)}, { /* long work  * / }, 'Doing cool work')
+ * 5) When amount of elements or iterations is not known (f.e. stream processing or recursive calls like tree traversal)
+ * totalAmountOfElements set to -1 and simpler statistic returned:
+ *	def pl = new ProgressLogger()
+ *  def pl = new ProgressLogger()
+ * [1, 2, 3, 4].each{
+ *	sleep 1000;
+ *	pl.next();
+ * }
+ * Result will be something like:
+ * Process item #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
+ * Process item #2. Spent (pack 1 elements) time: 1,000 (from start: 2,055)
+ * Process item #3. Spent (pack 1 elements) time: 1,001 (from start: 3,058)
+ * Process item #4. Spent (pack 1 elements) time: 1,001 (from start: 4,061)
  *
  * You are able provide result messages, custom message formatting, pack size after precessing write log, auto adjusting
  * such pack size to do not spam log, provide custom logging methods and so on.
@@ -53,8 +66,9 @@ class ProgressLogger {
 	static Map FORMAT = [
 		item: 'item'
 		,progress: '''Process ${objectName} #${currentElementNo} from ${totalAmountOfElements} (${sprintf('%.2f', percentComplete)}%). Spent (pack ${packLogSize} elements) time: ${lastPackSpent} (from start: ${fromStartSpent})${( (totalAmountOfElements - currentElementNo && currentElementNo > 1) ? ', ' + _FORMAT.estimation.make(totalAmountOfElements: totalAmountOfElements, currentElementNo: currentElementNo, estimationTimeToFinish: estimationTimeToFinish) : '' )}'''
+		,progress_total_unknown: '''Process ${objectName} #${currentElementNo}. Spent (pack ${packLogSize} elements) time: ${lastPackSpent} (from start: ${fromStartSpent})'''
 		,estimation: 'Estimated items: ${totalAmountOfElements - currentElementNo}, time: ${estimationTimeToFinish}'
-		,stop: 'Stop processing ${objectName}. spent: ${spent}.${additionalResultInformation ? " " + additionalResultInformation : "" }'
+		,stop: 'Stop processing ${objectName} (Total processed ${totalItems}). Spent: ${spent}.${additionalResultInformation ? " " + additionalResultInformation : "" }'
 	];
 
 	// Just cache created template as it used many times - and do not use @Lazy transformation to on the fly create items, and do not defile it each time format added
@@ -80,14 +94,15 @@ class ProgressLogger {
 	/**
 	 * Constructor from known amount of executions
 	 *
-	 * @param total
+	 * @param totalAmountOfElements By default value -1 mean what total number elements is not known (f.e. tree traversal or stream
+	 *	processing) in that case simpler statistics printed without totals and estimation
 	 * @param outMethod
 	 * @param packLogSize If null - auto adjust step. By default amount of object divided on 100 (100%, 1% at step) and then if
 	 *	such part will be executed faster than in second - redivide to 100 to decrease log overhead.
 	 * @param objName {@see FORMAT.item} by default
 	 */
-	public ProgressLogger(long total, Closure outMethod, Integer packLogSize = null, String objName = null){
-		this.totalAmountOfElements = total;
+	public ProgressLogger(long totalAmountOfElements = -1, Closure outMethod = {println it}, Integer packLogSize = null, String objName = null){
+		this.totalAmountOfElements = totalAmountOfElements;
 		this.last = this.start = System.nanoTime();
 		this.objName = (objName ?: FORMAT.item);
 		this.outMethod = outMethod;
@@ -101,13 +116,6 @@ class ProgressLogger {
 	}
 
 	/**
-	 * Reset timers
-	 */
-	public void reset(){
-		this.last = this.start = System.nanoTime();
-	}
-
-	/**
 	 * Create from list
 	 *
 	 * @param list
@@ -115,8 +123,15 @@ class ProgressLogger {
 	 * @param objName If omitted - class.simpleName of first list element used if it exists ('empty list' if list empty)
 	 * @param packLogSize
 	 */
-	ProgressLogger(Collection list, Closure outMethod, String objName = null, Integer packLogSize = null){
+	ProgressLogger(Collection list, Closure outMethod = {println it}, String objName = null, Integer packLogSize = null){
 		this( (list?.size() ?: 0), outMethod, packLogSize, (objName ?: (list.get(0)?.getClass()?.simpleName ?: 'empty list'())) );
+	}
+
+	/**
+	 * Reset timers
+	 */
+	public void reset(){
+		this.last = this.start = System.nanoTime();
 	}
 
 	/**
@@ -169,19 +184,19 @@ class ProgressLogger {
 	private void logProgress(long currentElementNo){
 		lastPackSpentNs = System.nanoTime() - last;
 		spentFromStartNs = System.nanoTime() - start;
-		leaved = totalAmountOfElements - currentElementNo;
+		leaved = this.totalAmountOfElements - currentElementNo;
 
-		if ( ! (currentElementNo % packLogSize) || currentElementNo == totalAmountOfElements || 1 == currentElementNo){ // First, last and by pack of 'packLogSize' amount of elements
+		if ( ! (currentElementNo % packLogSize) || currentElementNo == this.totalAmountOfElements || 1 == currentElementNo){ // First, last and by pack of 'packLogSize' amount of elements
 			outMethod(
-				_FORMAT.progress.make(
+				(-1 == totalAmountOfElements ? _FORMAT.progress_total_unknown : _FORMAT.progress).make(
 					objectName: objName
 					,currentElementNo: currentElementNo
-					,totalAmountOfElements: totalAmountOfElements
-					,percentComplete: currentElementNo / totalAmountOfElements * 100
+					,totalAmountOfElements: this.totalAmountOfElements
+					,percentComplete: currentElementNo / this.totalAmountOfElements * 100
 					,packLogSize: packLogSize
 					,lastPackSpent: Spent.formatTimeElapsedSinceNanosecond(lastPackSpentNs)
 					,fromStartSpent: Spent.formatTimeElapsedSinceNanosecond(spentFromStartNs)
-					,estimationTimeToFinish: Spent.formatTimeElapsedSinceNanosecond( (spentFromStartNs / currentElementNo * (totalAmountOfElements - currentElementNo)).toLong() )
+					,estimationTimeToFinish: Spent.formatTimeElapsedSinceNanosecond( (spentFromStartNs / currentElementNo * (this.totalAmountOfElements - currentElementNo)).toLong() )
 					,_FORMAT: _FORMAT // For Estimation online add
 				)
 			);
@@ -200,7 +215,7 @@ class ProgressLogger {
 	public Spent stop(String additionalResultInformation = ''){
 		Spent spent = new Spent(System.nanoTime() - start);
 
-		outMethod(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation));
+		outMethod(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current));
 		spent;
 	}
 
@@ -222,7 +237,7 @@ class ProgressLogger {
 	}
 
 	private void autoAdjustEach(){
-		this.packLogSize = totalAmountOfElements / autoAdjustFactor;
+		this.packLogSize = this.totalAmountOfElements / autoAdjustFactor;
 			if (packLogSize in [0, 1]){
 				packLogSize = 1;
 				return;
