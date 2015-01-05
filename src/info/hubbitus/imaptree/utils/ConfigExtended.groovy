@@ -16,23 +16,26 @@ import groovy.transform.CompileStatic
  * Additionally it override merge of ConfigObjects and do not replace completely replace Objects but set properties of it.
  * For example:
  * Standard behaviour:
- *class Test{
- *	String s = 's initial'
- *	Integer i = 77
- *}
+ * // Uncomment next line if you are plan run example from GroovyConsole to handle defined there classes: http://groovy.329449.n5.nabble.com/GroovyConsole-and-context-thread-loader-td4471707.html
+ * // Thread.currentThread().contextClassLoader = getClass().classLoader
+ * @groovy.transform.ToString
+ * class Test{
+ * 	String s = 's initial'
+ * 	Integer i = 77
+ * }
  *
- *ConfigObject config = new ConfigSlurper().parse('''config{
- *	some.property = 'value'
- *	test = new Test()
- *}''').config
+ * ConfigObject config = new ConfigSlurper().parse('''config{
+ * 	some.property = 'value'
+ * 	test = new Test()
+ * }''').config
  *
- *ConfigObject config1 = new ConfigSlurper().parse('''config{ test.s = 's change' }''').config
+ * ConfigObject config1 = new ConfigSlurper().parse('''config{ test.s = 's change' }''').config
  *
- *config.merge(config1)
- *assert config.test == 's change'
+ * config.merge(config1)
+ * assert config.test == 's change'
  *
- *BUT stop, why config.test replaced? Our intention was to set only their field s!
- *That class do that
+ * BUT stop, why config.test replaced? Our intention was to set only their field s!
+ * That class do that
  *
  *
  * @author Pavel Alexeev - <Pahan@Hubbitus.info> (pasha)
@@ -46,6 +49,11 @@ class ConfigExtended extends ConfigObject{
 	 * assert conf.some.key == [:]
 	 *
 	 * It is also safe for keys without dots.
+	 *
+	 * WARNING! Because this method so powerful (f.e. it give ability provide closures definition from command line),
+	 * there no easy possibility distinguish intentions provide atoms or string literals! So when someValue passed it
+	 * is it variable name or string value? So, strings must be quoted in regular syntax, so call may look like:
+	 * config.setFromPropertyPathLikeKey('some.test.s', '"s CHANGED"');
 	 *
 	 * Born in ais adapter.
 	 *
@@ -96,7 +104,7 @@ class ConfigExtended extends ConfigObject{
 						config.put(key, value);
 					}
 					else{ // Addition to do not replace object by instead modify its properties inplace
-						value.each{prop->
+						value.flatten().each{prop->
 							configEntry."${prop.key}" = prop.value;
 						}
 					}
