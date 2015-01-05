@@ -124,7 +124,7 @@ class ProgressLogger {
 	 * @param packLogSize
 	 */
 	ProgressLogger(Collection list, Closure outMethod = {println it}, String objName = null, Integer packLogSize = null){
-		this( (list?.size() ?: 0), outMethod, packLogSize, (objName ?: (list.get(0)?.getClass()?.simpleName ?: 'empty list'())) );
+		this( (list?.size() ?: 0), outMethod, packLogSize, (objName ?: (list?.size() ? list.get(0)?.getClass()?.simpleName : 'empty list')) );
 	}
 
 	/**
