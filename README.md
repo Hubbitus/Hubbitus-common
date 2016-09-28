@@ -10,7 +10,7 @@ Helper class logger of progress operation.
 It is intended for easy add possibility of logging progress of operations.
 1. For example in Groovy way it so simple as:
 
-```
+```groovy
 ProgressLogger.each([1, 2, 3, 4, 5]){
     println it // Some long run operation
 }
@@ -32,14 +32,14 @@ It will produce (by println) output like:
 2. Ofter useful provide out method, for example to tie into current scope logger instead of global stdout, and add
 some additional transform, it also simple:
 
-```
+```groovy
 ProgressLogger.each([1, 2, 3, 4, 5]){
 	println it
 }{ log.info "=$it=" }
 ```
 
 3. It may be used directly in plain old Java style like:
-```
+```groovy
 ProgressLogger pl = new ProgressLogger(aisList, {log.info(it)});
 for (Object aisObj in aisList){
     pl.next();
@@ -52,12 +52,12 @@ for (Object aisObj in aisList){
 }
 ```
 5. Or measure one run:
-```
+```groovy
 ProgressLogger.measure({log.info(it)}, { /* long work  * / }, 'Doing cool work')
 ```
 6. When amount of elements or iterations is not known (f.e. stream processing or recursive calls like tree traversal)
 totalAmountOfElements set to -1 and simpler statistic returned:
-```
+```groovy
 def pl = new ProgressLogger()
 [1, 2, 3, 4].each{
     sleep 1000;
@@ -79,22 +79,22 @@ Result will be something like:
 Main goal to add functionality to `ConfigObject` GDK class.
 
 First it allow operations opposite flatten, set hierarchy from string, like:
-```
+```groovy
 ConfigExtended conf = …
 conf.setFromPropertyPathLikeKey('some.deep.hierarchy.of.properties', value)
 ```
 and then access it as usual:
-```
+```groovy
 conf.some.deep.hierarchy.of.properties
 ```
 not as it is one string property.
-```
+```groovy
 conf.'some.deep.hierarchy.of.properties'
 ```
 
 Additionally it override merge of `ConfigObjects` and do not replace completely replace Objects but set properties of it.
 For example standard behaviour:
-```
+```groovy
 // Uncomment next line if you are plan run example from GroovyConsole to handle defined there classes: http://groovy.329449.n5.nabble.com/GroovyConsole-and-context-thread-loader-td4471707.html
 // Thread.currentThread().contextClassLoader = getClass().classLoader
 @groovy.transform.ToString
