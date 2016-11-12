@@ -8,21 +8,22 @@ import groovy.text.Template
  * It is intended for easy add possibility of logging progress of operations, for example:
  * 1) in Groovy way it so simple as:
  * <code>
- *		ProgressLogger.each([1, 2, 3, 4, 5]){
+ *	ProgressLogger.each([1, 2, 3, 4, 5]){
  *		println it // Some long run operation
  * }
  * </code>
  * It will produce (by println) output like:
- *	Process Integer #1 from 5 (20,00%). Spent (pack 1 elements) time: 0,041 (from start: 0,047)
+ *	Process [Integer] #1 from 5 (20,00%). Spent (pack 1 elements) time: 0,041 (from start: 0,047)
  *	1
- *	Process Integer #2 from 5 (40,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,278), Estimated items: 3, time: 0,417
+ *	Process [Integer] #2 from 5 (40,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,278). Estimated items: 3, time: 0,417
  *	2
- *	Process Integer #3 from 5 (60,00%). Spent (pack 1 elements) time: 0,012 (from start: 0,330), Estimated items: 2, time: 0,220
+ *	Process [Integer] #3 from 5 (60,00%). Spent (pack 1 elements) time: 0,012 (from start: 0,330). Estimated items: 2, time: 0,220
  *	3
- *	Process Integer #4 from 5 (80,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,340), Estimated items: 1, time: 0,085
+ *	Process [Integer] #4 from 5 (80,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,340). Estimated items: 1, time: 0,085
  *	4
- *	Process Integer #5 from 5 (100,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,344)
+ *	Process [Integer] #5 from 5 (100,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,344)
  *	5
+ *	Off course it will be helpful see there user defined class like Region, User or BlogPost.
  * 2) Often useful provide out method, for example to tie into current scope logger instead of global stdout, and add
  * some additional transform, it also simple:
  *	ProgressLogger.each([1, 2, 3, 4, 5]){
@@ -32,12 +33,7 @@ import groovy.text.Template
  *		ProgressLogger pl = new ProgressLogger(aisList, {log.info(it)});
  *		for (Object aisObj in aisList){
  *			pl.next();
- *			try{
- *				rowMapper(aisObj, di)
- *			}
- *			catch(AsaException ae){
- *				commonErrorAdd(di, ae);
- *			}
+ *			rowMapper(aisObj, di)
  *		}
  * 4) Or measure one run:
  *	ProgressLogger.measure({log.info(it)}, { /* long work  * / }, 'Doing cool work')
@@ -49,10 +45,10 @@ import groovy.text.Template
  *	pl.next();
  * }
  * Result will be something like:
- * Process item #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
- * Process item #2. Spent (pack 1 elements) time: 1,000 (from start: 2,055)
- * Process item #3. Spent (pack 1 elements) time: 1,001 (from start: 3,058)
- * Process item #4. Spent (pack 1 elements) time: 1,001 (from start: 4,061)
+ * Process [item] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
+ * Process [item] #2. Spent (pack 1 elements) time: 1,000 (from start: 2,055)
+ * Process [item] #3. Spent (pack 1 elements) time: 1,001 (from start: 3,058)
+ * Process [item] #4. Spent (pack 1 elements) time: 1,001 (from start: 4,061)
  *
  * 6) Just for the simplicity it may be:
  * <code>
@@ -70,14 +66,19 @@ import groovy.text.Template
  */
 class ProgressLogger {
 	/**
+	 * You may with configure prefix to start line from "Run", 'Testing', 'Run test' and so on
+	 */
+	String processName = 'Process';
+
+	/**
 	 * Format of messages. Allow to redefine, customize and i18n
 	 */
 	static Map FORMAT = [
 		item: 'item'
-		,progress: '''Process ${objectName} #${currentElementNo} from ${totalAmountOfElements} (${sprintf('%.2f', percentComplete)}%). Spent (pack ${packLogSize} elements) time: ${lastPackSpent} (from start: ${fromStartSpent})${( (totalAmountOfElements - currentElementNo && currentElementNo > 1) ? ', ' + _FORMAT.estimation.make(totalAmountOfElements: totalAmountOfElements, currentElementNo: currentElementNo, estimationTimeToFinish: estimationTimeToFinish) : '' )}'''
-		,progress_total_unknown: '''Process ${objectName} #${currentElementNo}. Spent (pack ${packLogSize} elements) time: ${lastPackSpent} (from start: ${fromStartSpent})'''
+		,progress: '''${processName} [${objectName}] #${currentElementNo} from ${totalAmountOfElements} (${sprintf('%.2f', percentComplete)}%). Spent (pack ${packLogSize} elements) time: ${lastPackSpent} (from start: ${fromStartSpent})${( (totalAmountOfElements - currentElementNo && currentElementNo > 1) ? '. ' + _FORMAT.estimation.make(totalAmountOfElements: totalAmountOfElements, currentElementNo: currentElementNo, estimationTimeToFinish: estimationTimeToFinish) : '' )}'''
+		,progress_total_unknown: '''${processName} [${objectName}] #${currentElementNo}. Spent (pack ${packLogSize} elements) time: ${lastPackSpent} (from start: ${fromStartSpent})'''
 		,estimation: 'Estimated items: ${totalAmountOfElements - currentElementNo}, time: ${estimationTimeToFinish}'
-		,stop: 'Stop processing ${objectName} (Total processed ${totalItems}). Spent: ${spent}.${additionalResultInformation ? " " + additionalResultInformation : "" }'
+		,stop: 'Stop processing [${objectName}] (Total processed ${totalItems}). Spent: ${spent}.${additionalResultInformation ? " " + additionalResultInformation : "" }'
 	];
 
 	// Just cache created template as it used many times - and do not use @Lazy transformation to on the fly create items, and do not define it each time format added
@@ -90,7 +91,7 @@ class ProgressLogger {
 
 	private long start;
 	private long last;
-	private long totalAmountOfElements;
+	private long totalAmountOfElements = -1;
 	int packLogSize;
 	String objName;
 	private long current = 1;
@@ -112,7 +113,6 @@ class ProgressLogger {
 	 */
 	public ProgressLogger(long totalAmountOfElements = -1, Closure outMethod = {println it}, Integer packLogSize = null, String objName = null){
 		this.totalAmountOfElements = totalAmountOfElements;
-		this.last = this.start = System.nanoTime();
 		this.objName = (objName ?: FORMAT.item);
 		this.outMethod = outMethod;
 		if (!packLogSize){
@@ -122,6 +122,7 @@ class ProgressLogger {
 		else{
 			this.packLogSize = packLogSize;;
 		}
+		reset()
 	}
 
 	/**
@@ -190,7 +191,7 @@ class ProgressLogger {
 	 *
 	 * @param currentElementNo
 	 */
-	private void logProgress(long currentElementNo){
+	private void logProgress(long currentElementNo, String iterationName = null){
 		lastPackSpentNs = System.nanoTime() - last;
 		spentFromStartNs = System.nanoTime() - start;
 		leaved = this.totalAmountOfElements - currentElementNo;
@@ -198,7 +199,8 @@ class ProgressLogger {
 		if ( ! (currentElementNo % packLogSize) || currentElementNo == this.totalAmountOfElements || 1 == currentElementNo){ // First, last and by pack of 'packLogSize' amount of elements
 			outMethod(
 				(-1 == totalAmountOfElements ? _FORMAT.progress_total_unknown : _FORMAT.progress).make(
-					objectName: objName
+					processName: processName
+					,objectName: iterationName ?: objName
 					,currentElementNo: currentElementNo
 					,totalAmountOfElements: this.totalAmountOfElements
 					,percentComplete: currentElementNo / this.totalAmountOfElements * 100
@@ -256,6 +258,27 @@ class ProgressLogger {
 	void next(Closure toRun){
 		toRun()
 		logProgress(current++);
+	}
+
+	/**
+	 * Method to tick like:
+	 *
+	 *	def pl = new ProgressLogger()
+	 * ['one', 'two', 'three', 'four'].each{
+	 *	pl.next it
+	 * }
+	 *
+	 * Output will be something like:
+	 * Process [one] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
+	 * Process [two] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
+	 * Process [three] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
+	 * Process [four] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
+	 *
+	 *
+	 * @param iterationName
+	 */
+	void next(String iterationName){
+		logProgress(current++, iterationName);
 	}
 
 	/**
