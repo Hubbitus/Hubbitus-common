@@ -209,7 +209,7 @@ class ProgressLogger {
 					,fromStartSpent: Spent.formatTimeElapsedSinceNanosecond(spentFromStartNs)
 					,estimationTimeToFinish: Spent.formatTimeElapsedSinceNanosecond( (spentFromStartNs / currentElementNo * (this.totalAmountOfElements - currentElementNo)).toLong() )
 					,_FORMAT: _FORMAT // For Estimation online add
-				)
+				).toString() // .toString for compatibility with Java methods, passed by ref
 			);
 			last = System.nanoTime();
 			autoAdjust();
@@ -226,7 +226,7 @@ class ProgressLogger {
 	public Spent stop(String additionalResultInformation = ''){
 		Spent spent = new Spent(System.nanoTime() - start);
 
-		outMethod(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current));
+		outMethod(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current).toString());
 		spent;
 	}
 
