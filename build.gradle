@@ -1,4 +1,7 @@
 apply plugin: 'groovy'
+// http://central.sonatype.org/pages/gradle.html
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 group = 'info.hubbitus'
 version = '1.1.1'
@@ -19,5 +22,73 @@ dependencies {
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '3.0'
+	gradleVersion = '3.2'
 }
+
+///////////////////////////////////////////////////////////////
+// Artifacts publishing into central OSS repository
+// http://central.sonatype.org/pages/gradle.html
+task javadocJar(type: Jar) {
+	classifier = 'javadoc'
+	from javadoc
+}
+
+task sourcesJar(type: Jar) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+artifacts {
+	archives javadocJar, sourcesJar
+}
+signing {
+//    required { gradle.taskGraph.hasTask("uploadArchives") } // https://groups.google.com/forum/#!topic/gaelyk/WfdEDBOzIOM
+	sign configurations.archives
+}
+
+
+uploadArchives {
+	repositories {
+		mavenDeployer {
+			beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			pom.project {
+				name project.name
+				packaging 'jar'
+				description 'Collection of tiny but very helpful utility classes like ProgressLogger, ConfigExtended and some benchmark classes'
+				url 'https://github.com/Hubbitus/Hubbitus-common'
+
+				scm {
+					connection 'scm:git:git@github.com:Hubbitus/Hubbitus-common.git'
+					developerConnection 'scm:git:git@github.com:Hubbitus/Hubbitus-common.git'
+					url 'https://github.com/Hubbitus/Hubbitus-common'
+				}
+
+				licenses {
+					license {
+						name 'The Apache License, Version 2.0'
+						url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+
+				developers {
+					developer {
+						id 'Hubbitus'
+						name 'Pavel Alexeev'
+						email 'Pahan@Hubbitus.info'
+					}
+				}
+			}
+		}
+	}
+}
+// /Artifacts publishing into central OSS repository
+////////////////////////////////////////////////////
