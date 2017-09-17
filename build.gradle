@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group = 'info.hubbitus'
-version = '1.2'
+version = '1.2.1'
 
 repositories {
 	mavenCentral()
@@ -19,9 +19,9 @@ dependencies {
 	// mandatory dependencies for using Spock
 	compile 'org.codehaus.groovy:groovy-all:2.4.7'
 	testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
-	testCompile 'org.codehaus.gpars:gpars:+'
-	testCompile 'org.hamcrest:hamcrest-library:+' // JUnit regexp checks. See http://matchers.jcabi.com/regex-matchers.html
-	testCompile 'com.jcabi:jcabi-matchers:+' // JUnit regexp checks. See http://matchers.jcabi.com/regex-matchers.html
+	testCompile 'org.codehaus.gpars:gpars:[1.2.1,)'
+	testCompile 'org.hamcrest:hamcrest-library:[1.4-atlassian-1,)' // JUnit regexp checks. See http://matchers.jcabi.com/regex-matchers.html
+	testCompile 'com.jcabi:jcabi-matchers:[1.4,)' // JUnit regexp checks. See http://matchers.jcabi.com/regex-matchers.html
 }
 
 task wrapper(type: Wrapper) {
