@@ -3,6 +3,11 @@ package info.hubbitus.utils.bench
 import groovy.text.SimpleTemplateEngine
 import groovy.text.Template
 
+import java.util.concurrent.atomic.AtomicLong
+import java.util.function.Consumer
+import java.util.function.Function
+import java.util.function.Supplier
+
 /**
  * Helper class logger of progress operation.
  * It is intended for easy add possibility of logging progress of operations, for example:
@@ -13,15 +18,15 @@ import groovy.text.Template
  * }
  * </code>
  * It will produce (by println) output like:
- *	Process [Integer] #1 from 5 (20,00%). Spent (pack 1 elements) time: 0,041 (from start: 0,047)
+ *	Process [Integer] #1 from 5 (20,00%). Spent (pack by 1) time: 0,041 (from start: 0,047)
  *	1
- *	Process [Integer] #2 from 5 (40,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,278). Estimated items: 3, time: 0,417
+ *	Process [Integer] #2 from 5 (40,00%). Spent (pack by 1) time: 0,001 (from start: 0,278). Estimated items: 3, time: 0,417
  *	2
- *	Process [Integer] #3 from 5 (60,00%). Spent (pack 1 elements) time: 0,012 (from start: 0,330). Estimated items: 2, time: 0,220
+ *	Process [Integer] #3 from 5 (60,00%). Spent (pack by 1) time: 0,012 (from start: 0,330). Estimated items: 2, time: 0,220
  *	3
- *	Process [Integer] #4 from 5 (80,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,340). Estimated items: 1, time: 0,085
+ *	Process [Integer] #4 from 5 (80,00%). Spent (pack by 1) time: 0,001 (from start: 0,340). Estimated items: 1, time: 0,085
  *	4
- *	Process [Integer] #5 from 5 (100,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,344)
+ *	Process [Integer] #5 from 5 (100,00%). Spent (pack by 1) time: 0,001 (from start: 0,344)
  *	5
  *	Off course it will be helpful see there user defined class like Region, User or BlogPost.
  * 2) Often useful provide out method, for example to tie into current scope logger instead of global stdout, and add
@@ -45,10 +50,10 @@ import groovy.text.Template
  *	pl.next();
  * }
  * Result will be something like:
- * Process [item] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
- * Process [item] #2. Spent (pack 1 elements) time: 1,000 (from start: 2,055)
- * Process [item] #3. Spent (pack 1 elements) time: 1,001 (from start: 3,058)
- * Process [item] #4. Spent (pack 1 elements) time: 1,001 (from start: 4,061)
+ * Process [item] #1. Spent (pack by 1) time: 1,007 (from start: 1,007)
+ * Process [item] #2. Spent (pack by 1) time: 1,000 (from start: 2,055)
+ * Process [item] #3. Spent (pack by 1) time: 1,001 (from start: 3,058)
+ * Process [item] #4. Spent (pack by 1) time: 1,001 (from start: 4,061)
  *
  * 6) Just for the simplicity it may be:
  * <code>
@@ -75,8 +80,8 @@ class ProgressLogger {
 	 */
 	static Map FORMAT = [
 		item: 'item'
-		,progress: '''${processName} [${objectName}] #${currentElementNo} from ${totalAmountOfElements} (${sprintf('%.2f', percentComplete)}%). Spent (pack ${packLogSize} elements) time: ${lastPackSpent} (from start: ${fromStartSpent})${( (totalAmountOfElements - currentElementNo && currentElementNo > 1) ? '. ' + _FORMAT.estimation.make(totalAmountOfElements: totalAmountOfElements, currentElementNo: currentElementNo, estimationTimeToFinish: estimationTimeToFinish) : '' )}'''
-		,progress_total_unknown: '''${processName} [${objectName}] #${currentElementNo}. Spent (pack ${packLogSize} elements) time: ${lastPackSpent} (from start: ${fromStartSpent})'''
+		,progress: '''${processName} [${objectName}] #${currentElementNo} from ${totalAmountOfElements} (${sprintf('%.2f', percentComplete)}%). Spent (pack by ${packLogSize}) time: ${lastPackSpent} (from start: ${fromStartSpent})${( (totalAmountOfElements - currentElementNo && currentElementNo > 1) ? '. ' + _FORMAT.estimation.make(totalAmountOfElements: totalAmountOfElements, currentElementNo: currentElementNo, estimationTimeToFinish: estimationTimeToFinish) : '' )}'''
+		,progress_total_unknown: '''${processName} [${objectName}] #${currentElementNo}. Spent (pack by ${packLogSize}) time: ${lastPackSpent} (from start: ${fromStartSpent})'''
 		,estimation: 'Estimated items: ${totalAmountOfElements - currentElementNo}, time: ${estimationTimeToFinish}'
 		,stop: 'Stop processing [${objectName}] (Total processed ${totalItems}). Spent: ${spent}.${additionalResultInformation ? " " + additionalResultInformation : "" }'
 	];
@@ -94,8 +99,9 @@ class ProgressLogger {
 	private long totalAmountOfElements = -1;
 	int packLogSize;
 	String objName;
-	private long current = 1;
-	private Closure outMethod;
+	private AtomicLong current = new AtomicLong(0);
+	/** Consumer nor Closure to interoperability with pure Java uses! **/
+	private Consumer outMethod;
 
 	long lastPackSpentNs;
 	long spentFromStartNs;
@@ -111,7 +117,7 @@ class ProgressLogger {
 	 *	such part will be executed faster than in second - redivide to 100 to decrease log overhead.
 	 * @param objName {@see FORMAT.item} by default
 	 */
-	public ProgressLogger(long totalAmountOfElements = -1, Closure outMethod = {println it}, Integer packLogSize = null, String objName = null){
+	ProgressLogger(long totalAmountOfElements = -1, Consumer outMethod = {println it}, Integer packLogSize = null, String objName = null){
 		this.totalAmountOfElements = totalAmountOfElements;
 		this.objName = (objName ?: FORMAT.item);
 		this.outMethod = outMethod;
@@ -133,14 +139,14 @@ class ProgressLogger {
 	 * @param objName If omitted - class.simpleName of first list element used if it exists ('empty list' if list empty)
 	 * @param packLogSize
 	 */
-	ProgressLogger(Collection list, Closure outMethod = {println it}, String objName = null, Integer packLogSize = null){
+	ProgressLogger(Collection list, Consumer outMethod = {println it}, String objName = null, Integer packLogSize = null){
 		this( (list?.size() ?: 0), outMethod, packLogSize, (objName ?: (list?.size() ? list.get(0)?.getClass()?.simpleName : 'empty list')) );
 	}
 
 	/**
 	 * Reset timers
 	 */
-	public void reset(){
+	void reset(){
 		this.last = this.start = System.nanoTime();
 	}
 
@@ -157,32 +163,32 @@ class ProgressLogger {
 	 * @param objName
 	 * @param each
 	 */
-	static void each(Collection list, Closure doing, Closure outMethod = {println it}, String objName = null, Integer each = null){
+	static void each(Collection list, Consumer doing, Consumer outMethod = {println it}, String objName = null, Integer each = null){
 		ProgressLogger pl = new ProgressLogger(list, outMethod, objName, each);
 		list.each{
 			pl.next();
-			doing(it);
+			doing.accept(it);
 		}
 	}
 
 	/**
-	 * Static method to measure one closure execution.
-	 * String from closure execution result will be placed into Spent.info
+	 * Static method to measure one execution of some peace code.
+	 * String from closure execution (called {@link #toString()}) result will be placed into Spent.info
 	 *
-	 * @param outMethod
-	 * @param execute
-	 * @param objName
-	 * @param beginMessage
-	 * @param addonEndMessage if it non-empty it will be Spent.info, otherwise result of execution
+	 * @param outMethod How to log result
+	 * @param execute Supplier (Closure) to execute. None arguments.
+	 * @param objName optional objects common nape present in logging
+	 * @param beginMessage optional string on start process
+	 * @param additionalEndMessage if it non-empty it will be Spent.info, otherwise result of execution
 	 * @return
 	 */
-	static Spent measure(Closure outMethod, Closure execute, String objName = '', String beginMessage = null, String addonEndMessage = ''){
-		if (beginMessage) outMethod(beginMessage);
+	static Spent measure(Consumer outMethod, Supplier execute, String objName = '', String beginMessage = null, String additionalEndMessage = ''){
+		if (beginMessage) outMethod.accept(beginMessage);
 		ProgressLogger pl = new ProgressLogger(1, outMethod, -1, '');
 		if (objName) pl.objName = objName;
-		def execRes = execute();
-		Spent spent = pl.stop(addonEndMessage ?: execRes);
-		spent.info = (addonEndMessage ?: execRes);
+		def execRes = execute.get();
+		Spent spent = pl.stop(additionalEndMessage ?: execRes);
+		spent.info = (additionalEndMessage ?: execRes);
 		return spent;
 	}
 
@@ -197,8 +203,8 @@ class ProgressLogger {
 		leaved = this.totalAmountOfElements - currentElementNo;
 
 		if ( ! (currentElementNo % packLogSize) || currentElementNo == this.totalAmountOfElements || 1 == currentElementNo){ // First, last and by pack of 'packLogSize' amount of elements
-			outMethod(
-				(-1 == totalAmountOfElements ? _FORMAT.progress_total_unknown : _FORMAT.progress).make(
+			outMethod.accept(
+				(-1L == totalAmountOfElements ? _FORMAT.progress_total_unknown : _FORMAT.progress).make(
 					processName: processName
 					,objectName: iterationName ?: objName
 					,currentElementNo: currentElementNo
@@ -223,18 +229,32 @@ class ProgressLogger {
 	 * @param additionalResultInformation - Optional information to include in stop message. Useful for short messages like: "Got N objects" or "Result archive size is M"
 	 * @return
 	 */
-	public Spent stop(String additionalResultInformation = ''){
+	Spent stop(String additionalResultInformation = ''){
 		Spent spent = new Spent(System.nanoTime() - start);
 
-		outMethod(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current).toString());
+		outMethod.accept(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current.incrementAndGet()).toString());
 		spent;
 	}
 
 	/**
 	 * Tick on packLogSize element
+	 * It may be used just like ++ operator:
+	 * <code>
+	 *	def pl = new ProgressLogger()
+	 * [1, 2, 3, 4].each{
+	 *	sleep 1000;
+	 *	pl.next();
+	 * }
+	 * </code>
+	 * <code>
+	 *	def pl = new ProgressLogger()
+	 * [1, 2, 3, 4].each{
+	 *	++pl.next();
+	 * }
+	 * </code>
 	 */
 	void next(){
-		logProgress(current++);
+		logProgress(current.incrementAndGet());
 	}
 
 	/**
@@ -250,14 +270,18 @@ class ProgressLogger {
 	 * Just for the simplicity it may be used as:
 	 * <code>
 	 *	def pl = new ProgressLogger()
-	 * [1, 2, 3, 4].each{
-	 *	pl.next {sleep 1000};
-	 * }
+	 *	[1, 2, 3, 4].each{
+	 *		pl.next {sleep 1000};
+	 *	}
 	 *</code>
+	 *
+	 * @param toRun {@see Supplier} instead of {@see Closure} uses to compatibility with Java calls
+	 * @return
 	 */
-	void next(Closure toRun){
-		toRun()
-		logProgress(current++);
+	def next(Supplier toRun){
+		def res = toRun.get()
+		logProgress(current.incrementAndGet())
+		return res
 	}
 
 	/**
@@ -269,29 +293,28 @@ class ProgressLogger {
 	 * }
 	 *
 	 * Output will be something like:
-	 * Process [one] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
-	 * Process [two] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
-	 * Process [three] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
-	 * Process [four] #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
-	 *
+	 * Process [one] #1. Spent (pack by 1) time: 1,007 (from start: 1,007)
+	 * Process [two] #1. Spent (pack by 1) time: 1,007 (from start: 1,007)
+	 * Process [three] #1. Spent (pack by 1) time: 1,007 (from start: 1,007)
+	 * Process [four] #1. Spent (pack by 1) time: 1,007 (from start: 1,007)
 	 *
 	 * @param iterationName
 	 */
 	void next(String iterationName){
-		logProgress(current++, iterationName);
+		logProgress(current.incrementAndGet(), iterationName);
 	}
 
 	/**
 	 * Adjust elements batch size automatically to do not SPAM log
 	 */
-	void autoAdjust(){
-		if (autoAdjust && current > 2 && lastPackSpentNs / (10 ** 9) < 1){
+	synchronized void autoAdjust(){
+		if (autoAdjust && current.get() > 2 && lastPackSpentNs / (10 ** 9) < 1){
 			this.autoAdjustFactor = 10;
 			autoAdjustEach();
 		}
 	}
 
-	private void autoAdjustEach(){
+	synchronized private void autoAdjustEach(){
 		this.packLogSize = this.totalAmountOfElements / autoAdjustFactor;
 			if (packLogSize in [0, 1]){
 				packLogSize = 1;

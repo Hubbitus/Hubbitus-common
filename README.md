@@ -4,7 +4,7 @@ Project split from directory https://github.com/Hubbitus/ImapTree/tree/master/sr
 
 The main purpose to collect there useful utility classes like `ProgressLogger`, `ConfigExtended` and share them between `Groovy`/`Java` projects..
 
-## ProgressLogger 
+## ProgressLogger
 
 Helper class logger of progress operation.
 It is intended for easy add possibility of logging progress of operations.
@@ -18,15 +18,15 @@ ProgressLogger.each([1, 2, 3, 4, 5]){
 
 It will produce (by println) output like:
 
-    Process Integer #1 from 5 (20,00%). Spent (pack 1 elements) time: 0,041 (from start: 0,047)
+    Process Integer #1 from 5 (20,00%). Spent (pack by 1) time: 0,041 (from start: 0,047)
     1
-    Process Integer #2 from 5 (40,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,278), Estimated items: 3, time: 0,417
+    Process Integer #2 from 5 (40,00%). Spent (pack by 1) time: 0,001 (from start: 0,278), Estimated items: 3, time: 0,417
     2
-    Process Integer #3 from 5 (60,00%). Spent (pack 1 elements) time: 0,012 (from start: 0,330), Estimated items: 2, time: 0,220
+    Process Integer #3 from 5 (60,00%). Spent (pack by 1) time: 0,012 (from start: 0,330), Estimated items: 2, time: 0,220
     3
-    Process Integer #4 from 5 (80,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,340), Estimated items: 1, time: 0,085
+    Process Integer #4 from 5 (80,00%). Spent (pack by 1) time: 0,001 (from start: 0,340), Estimated items: 1, time: 0,085
     4
-    Process Integer #5 from 5 (100,00%). Spent (pack 1 elements) time: 0,001 (from start: 0,344)
+    Process Integer #5 from 5 (100,00%). Spent (pack by 1) time: 0,001 (from start: 0,344)
     5
 
 2. Ofter useful provide out method, for example to tie into current scope logger instead of global stdout, and add
@@ -67,10 +67,10 @@ def pl = new ProgressLogger()
 
 Result will be something like:
 
-    Process item #1. Spent (pack 1 elements) time: 1,007 (from start: 1,007)
-    Process item #2. Spent (pack 1 elements) time: 1,000 (from start: 2,055)
-    Process item #3. Spent (pack 1 elements) time: 1,001 (from start: 3,058)
-    Process item #4. Spent (pack 1 elements) time: 1,001 (from start: 4,061)
+    Process item #1. Spent (pack by 1) time: 1,007 (from start: 1,007)
+    Process item #2. Spent (pack by 1) time: 1,000 (from start: 2,055)
+    Process item #3. Spent (pack by 1) time: 1,001 (from start: 3,058)
+    Process item #4. Spent (pack by 1) time: 1,001 (from start: 4,061)
     You are able provide result messages, custom message formatting, pack size after precessing write log, auto adjusting
     such pack size to do not spam log, provide custom logging methods and so on.
 
@@ -116,3 +116,41 @@ assert config.test == 's change'
 
 But stop, why config.test replaced? Our intention was to set only their field s!
 **That class do that magic**
+
+# Changelog
+
+## version 1.2
+* Make `ProgressLogger` thread safe, add parallel test with GParse
+* `next(Closure toRun)` method now returns result from `toRun` closure. So you may use it directly n collection methods like `collect`:
+```
+List list = [1, 2, 3]
+ProgressLogger pl = new ProgressLoger(list);
+def res = list.collect{
+    pl.next{
+        it * 2
+    }
+}
+assert res = [2, 4, 6]
+```
+* Step to use `Producer`/`Consumer` functional interfaces instead of just `Closure` as arguments to be closer to Java calls!
+ Before that you had to create instance of `Closure`. It works, but has two drawbacks:
+ * It can't be simplified by `lambda` usage
+ * In logback loggers, when method accounted `.call()` main method logged
+ * Java test initiated also
+
+So, now in pure Java instead of ugly:
+```
+    ProgressLogger pl = new ProgressLogger(list, new Closure(null) {
+        @Override
+        public Object call(Object... args) {
+            log.debug((String) args[0]);
+            return null;
+        }
+    });
+```
+ you may simply do:
+```
+    ProgressLogger pl = new ProgressLogger(list, it -> log.debug(it));
+```
+which much more cleaner.
+* Step to gradle 4.1

@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group = 'info.hubbitus'
-version = '1.1.1'
+version = '1.2'
 
 repositories {
 	mavenCentral()
@@ -19,10 +19,13 @@ dependencies {
 	// mandatory dependencies for using Spock
 	compile 'org.codehaus.groovy:groovy-all:2.4.7'
 	testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+	testCompile 'org.codehaus.gpars:gpars:+'
+	testCompile 'org.hamcrest:hamcrest-library:+' // JUnit regexp checks. See http://matchers.jcabi.com/regex-matchers.html
+	testCompile 'com.jcabi:jcabi-matchers:+' // JUnit regexp checks. See http://matchers.jcabi.com/regex-matchers.html
 }
 
 task wrapper(type: Wrapper) {
-	gradleVersion = '3.2'
+	gradleVersion = '4.1'
 }
 
 ///////////////////////////////////////////////////////////////
@@ -63,7 +66,7 @@ uploadArchives {
 			pom.project {
 				name project.name
 				packaging 'jar'
-				description 'Collection of tiny but very helpful utility classes like ProgressLogger, ConfigExtended and some benchmark classes'
+				description 'Collection of tiny but very helpful utility classes like ProgressLogger, ConfigExtended and some benchmark classes. Java and Groovy.'
 				url 'https://github.com/Hubbitus/Hubbitus-common'
 
 				scm {
