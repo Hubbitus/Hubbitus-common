@@ -119,6 +119,9 @@ But stop, why config.test replaced? Our intention was to set only their field s!
 
 # Changelog
 
+## version 1.3
+* Fix benchmark. Add test
+
 ## version 1.2
 * Make `ProgressLogger` thread safe, add parallel test with GParse
 * `next(Closure toRun)` method now returns result from `toRun` closure. So you may use it directly n collection methods like `collect`:

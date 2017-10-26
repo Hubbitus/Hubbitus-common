@@ -7,7 +7,6 @@ import java.util.function.Consumer;
 import groovy.util.logging.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
-import com.jcabi.matchers.RegexMatchers;
 
 import static com.jcabi.matchers.RegexMatchers.matchesPattern;
 

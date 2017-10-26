@@ -25,8 +25,8 @@ class Benchmark{
 			res << pl.stop();
 			pl.reset();
 		}
-		BenchResult result = new BenchResult( min: res.min{Spent it-> it.spent}, max: res.max{Spent it-> it.spent}, avg: new Spent((Long)res.sum{Spent it-> it.spent}/count), sum: new Spent((Long)res.sum{Spent it-> it.spent}) );
-		outMethod( _('Benchmarking %d iterations done', count) + '; Res:\n' + result );
+		BenchResult result = new BenchResult( min: res.min{Spent it-> it.spent}, max: res.max{Spent it-> it.spent}, avg: new Spent((res.sum{Spent it-> it.spent}/count) as Long), sum: new Spent((res.sum{Spent it-> it.spent}) as Long) );
+		outMethod("Benchmarking $count iterations done; Res:\n $result");
 		return result;
 	}
 }
