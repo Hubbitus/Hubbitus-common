@@ -17,7 +17,7 @@ import static com.jcabi.matchers.RegexMatchers.matchesPattern;
 @Slf4j
 public class ProgressLoggerJavaTest extends Assert {
     private final StringBuffer sb = new StringBuffer();
-    Consumer bufferWrite = (it) -> sb.append(it).append('\n');
+    private Consumer bufferWrite = (it) -> sb.append(it).append('\n');
 
     @Test
     public void testWithImplicitCreateConsumer(){

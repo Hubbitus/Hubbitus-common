@@ -187,7 +187,7 @@ class ProgressLogger {
 		ProgressLogger pl = new ProgressLogger(1, outMethod, -1, '');
 		if (objName) pl.objName = objName;
 		def execRes = execute.get();
-		Spent spent = pl.stop(additionalEndMessage ?: execRes);
+		Spent spent = pl.stop(additionalEndMessage ?: execRes.toString());
 		spent.info = (additionalEndMessage ?: execRes);
 		return spent;
 	}

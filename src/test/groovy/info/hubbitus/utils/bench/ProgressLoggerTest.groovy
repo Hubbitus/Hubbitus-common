@@ -162,6 +162,13 @@ Process \[four\] #4 from 4 \(100,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(f
 			sb ==~ /Stop processing \[Doing cool work!\] \(Total processed 1\)\. Spent: 0,\d{3}\.\n/
 	}
 
+	def 'measure() with object result from closure'(){
+		when:
+			ProgressLogger.measure(bufferWrite, { return new Expando(one: 1, two: 2) }, 'Test measure')
+		then:
+			noExceptionThrown()
+	}
+
 	def "next: iterate by collection (fixed amount of elements)"() {
 		given:
 			ProgressLogger pl = new ProgressLogger(objectsList, bufferWrite);

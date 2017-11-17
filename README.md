@@ -118,6 +118,8 @@ But stop, why config.test replaced? Our intention was to set only their field s!
 **That class do that magic**
 
 # Changelog
+## version 1.3.1
+* Fix `ProgressLogger.measure` with object result from closure
 
 ## version 1.3
 * Fix benchmark. Add test
