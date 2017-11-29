@@ -5,6 +5,7 @@ import groovy.transform.CompileStatic
 /**
  * Main goal to add functionality to ConfigObject GDK class
  *
+ * <h1>1. setFromPropertyPathLikeKey</h1>
  * First it allow operations opposite flatten, set hierarchy from string, like:
  * ConfigExtended conf = …
  *	conf.setFromPropertyPathLikeKey('some.deep.hierarchy.of.properties', value)
@@ -13,6 +14,7 @@ import groovy.transform.CompileStatic
  * not as it is one string property.
  * conf.'some.deep.hierarchy.of.properties'
  *
+ * <h1>2. override merge to step into objects properties, not just ConfigObject instances and maps</h1>
  * Additionally it override merge of ConfigObjects and do not replace completely replace Objects but set properties of it.
  * For example:
  * Standard behaviour:
@@ -32,16 +34,47 @@ import groovy.transform.CompileStatic
  * ConfigObject config1 = new ConfigSlurper().parse('''config{ test.s = 's change' }''').config
  *
  * config.merge(config1)
- * assert config.test == 's change'
+ * assert config.test.s == 's change'
  *
  * BUT stop, why config.test replaced? Our intention was to set only their field s!
  * That class do that
  *
+ * <h1>3. Allow by default leftShift (<<) operation on non-existing values</h1>
+ * @link #leftShift
  *
  * @author Pavel Alexeev - <Pahan@Hubbitus.info> (pasha)
  * @created 2015-01-03 22:10
  **/
 class ConfigExtended extends ConfigObject{
+	/**
+	 * Factory to do not always remember use {@see ConfigSlurper} and cast result
+	 *
+	 * Instead of:
+	 * <code>
+	 *     ConfigExtended configExtended = ((ConfigExtended)new ConfigSlurper().parse('config{ one = 1 }')).config
+	 * </code>
+	 * you may just do:
+	 * <code>
+	 *     ConfigExtended.create('config{ one = 1 }')
+	 * </code>
+	 *
+	 * @param script
+	 * @param firstLevelToStrip
+	 * @return
+	 */
+	static ConfigExtended create(String script, String firstLevelToStrip = 'config'){
+		((ConfigExtended)new ConfigSlurper().parse(script)."$firstLevelToStrip")
+	}
+
+	ConfigExtended() {
+	}
+
+	ConfigExtended(URL file, ConfigObject parent, String name) {
+		super(file)
+		this.name = name
+		this.parent = parent
+	}
+
 	/**
 	 * It is not work set it from doted string, but read in groovy syntax like:
 	 * ConfigObject conf = new ConfigObject();
@@ -50,19 +83,26 @@ class ConfigExtended extends ConfigObject{
 	 *
 	 * It is also safe for keys without dots.
 	 *
-	 * WARNING! Because this method so powerful (f.e. it give ability provide closures definition from command line),
-	 * there no easy possibility distinguish intentions provide atoms or string literals! So when someValue passed it
-	 * is it variable name or string value? So, strings must be quoted in regular syntax, so call may look like:
-	 * config.setFromPropertyPathLikeKey('some.test.s', '"s CHANGED"');
-	 *
 	 * Born in ais adapter.
+	 *
+	 * @see #setFromPropertyPathLikeKey(String, String)
 	 *
 	 * @param conf
 	 * @param propertyLikeKey
 	 * @param value
 	 */
-	public void setFromPropertyPathLikeKey(String propertyLikeKey, value){
+	void setFromPropertyPathLikeKey(String propertyLikeKey, value){
 		merge((ConfigObject)new ConfigSlurper().parse( "config{ $propertyLikeKey = $value }" ).config);
+	}
+
+	/**
+	 *
+	 * @see #setFromPropertyPathLikeKey(String, Object)
+	 * @param propertyLikeKey
+	 * @param value
+	 */
+	void setFromPropertyPathLikeKey(String propertyLikeKey, String value){
+		merge((ConfigObject)new ConfigSlurper().parse( "config{ $propertyLikeKey = '$value' }" ).config);
 	}
 
 	/**
@@ -73,7 +113,7 @@ class ConfigExtended extends ConfigObject{
 	 * @return The result of the merge
 	 */
 	@Override
-	public Map merge(ConfigObject other) {
+	Map merge(ConfigObject other) {
 		return doMerge(this, other);
 	}
 
@@ -87,25 +127,24 @@ class ConfigExtended extends ConfigObject{
 	 */
 	private Map doMerge(Map config, Map other) {
 		for (Object o : other.entrySet()) {
-			Map.Entry next = (Map.Entry) o;
-			Object key = next.getKey();
-			Object value = next.getValue();
+			Object key = o.key
+			Object value = o.value
 
-			Object configEntry = config.get(key);
+			Object configEntry = config.get(key)
 
 			if (configEntry == null) {
-				config.put(key, value);
+				config.put(key, value)
 			} else {
 				if (configEntry instanceof Map && ((Map)configEntry).size() > 0 && value instanceof Map) {
 					// recur
-					doMerge((Map) configEntry, (Map) value);
+					doMerge((Map) configEntry, (Map) value)
 				} else {
 					if (configEntry instanceof Map && ((Map)configEntry).size() > 0){ // As parent
-						config.put(key, value);
+						config.put(key, value)
 					}
 					else{ // Addition to do not replace object by instead modify its properties inplace
 						value.flatten().each{prop->
-							configEntry."${prop.key}" = prop.value;
+							configEntry."${prop.key}" = prop.value
 						}
 					}
 				}
@@ -113,5 +152,61 @@ class ConfigExtended extends ConfigObject{
 		}
 
 		return config;
+	}
+
+		ConfigObject parent
+		String name
+//	static class ConfigObjectParentAware extends ConfigObject{
+//
+//		ConfigObjectParentAware(URL file, ConfigObject parent, String name) {
+//			super(file)
+//			this.parent = parent
+//			this.name = name
+//		}
+//	}
+
+	/**
+	 * Overrides the default getProperty implementation to create {@see ConfigObjectParentAware} instances
+	 */
+	@Override
+	Object getProperty(String name) {
+		if ("configFile".equals(name))
+			return this.configFile;
+
+		if (!containsKey(name)) {
+			ConfigExtended prop = new ConfigExtended(this.getConfigFile(), this, name);
+			put(name, prop);
+
+			return prop;
+		}
+
+		return get(name);
+	}
+
+	/**
+	 * Auto-replace value by list on leftShift (<<) operation
+	 *
+	 * <code>
+	 * ConfigExtended configExtended = ConfigExtended.create('''config{ one = 1 }''')
+	 * configExtended.notExistent << 'list value'
+	 * configExtended.notExistent instanceof List
+	 * </code>
+	 *
+	 * It useful to do not extra checks in cycle, f.e.:
+	 *
+	 * (1..100).each{
+	 * if (!configExtended.isSet('listValues')) configExtended.listValues = []
+	 *   configExtended.listValues.add(it)
+	 * }
+	 *
+	 * You may just drop "if (!configExtended.isSet('listValues')) configExtended.listValues = []"!
+	 *
+	 * @param value
+	 * @return
+	 */
+	ConfigExtended leftShift(value){
+		// Replace self in parent! And there must be explicit getters to do not create ConfigObjects
+		this.getParent()[this.getName()] = [value]
+		this
 	}
 }

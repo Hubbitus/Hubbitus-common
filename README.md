@@ -78,6 +78,8 @@ Result will be something like:
 
 Main goal to add functionality to `ConfigObject` GDK class.
 
+### 1. setFromPropertyPathLikeKey()
+
 First it allow operations opposite flatten, set hierarchy from string, like:
 ```groovy
 ConfigExtended conf = …
@@ -92,6 +94,8 @@ not as it is one string property.
 conf.'some.deep.hierarchy.of.properties'
 ```
 
+### 2. override merge to step into objects properties, not just ConfigObject instances and maps
+
 Additionally it override merge of `ConfigObjects` and do not replace completely replace Objects but set properties of it.
 For example standard behaviour:
 ```groovy
@@ -99,25 +103,64 @@ For example standard behaviour:
 // Thread.currentThread().contextClassLoader = getClass().classLoader
 @groovy.transform.ToString
 class Test{
-	String s = 's initial'
-	Integer i = 77
+  String s = 's initial'
+  Integer i = 77
 }
 
 ConfigObject config = new ConfigSlurper().parse('''config{
-	some.property = 'value'
-	test = new Test()
+  some.property = 'value'
+  test = new Test()
 }''').config
 
 ConfigObject config1 = new ConfigSlurper().parse('''config{ test.s = 's change' }''').config
 
 config.merge(config1)
-assert config.test == 's change'
+assert config.test.s == 's change'
 ```
 
 But stop, why config.test replaced? Our intention was to set only their field s!
 **That class do that magic**
 
+
+### 3. Allow by default leftShift (<<) operation on non-existing values
+
+    ConfigExtended configExtended = ConfigExtended.create('''config{ one = 1 }''')
+    configExtended.notExistent << 'list value'
+    configExtended.notExistent instanceof List
+
+It useful to do not extra checks in cycle, f.e.:
+
+    (1..100).each{
+        if (!configExtended.isSet('listValues')) configExtended.listValues = []
+        configExtended.listValues.add(it)
+    }
+
+became just:
+
+    (1..100).each{
+        configExtended.listValues.add(it)
+    }
+
+and result identical!
+
 # Changelog
+## version 1.4 2017-11-29 23:30
+* Add test `info.hubbitus.utils.ConfigExtendedTest`
+* Add method `info.hubbitus.utils.ConfigExtended.setFromPropertyPathLikeKey(java.lang.String, java.lang.String)` to do not always quote `String` values
+* And `factory method` `info.hubbitus.utils.ConfigExtended.create(java.lang.String, java.lang.String)` to do not always remember use `ConfigSlurper` and cast result.
+
+  So now instead of:
+
+    ```
+    ConfigExtended configExtended = ((ConfigExtended)new ConfigSlurper().parse('config{ one = 1 }')).config
+    ```
+
+ you may just do:
+    ```
+    ConfigExtended.create('config{ one = 1 }')
+    ```
+* Add `info.hubbitus.utils.ConfigExtended.leftShift` operator (<< operation) for easy list creation
+
 ## version 1.3.1
 * Fix `ProgressLogger.measure` with object result from closure
 
