@@ -22,7 +22,7 @@ class BenchmarkTest extends Specification {
             BenchResult res = Benchmark.benchmark({ 3 * 5 }, 100, {it-> sb.append(it)})
         then:
             noExceptionThrown()
-            sb.toString() ==~ /Benchmarking 100 iterations done; Res:\n min=0,\d{3}\navg=0,\d{3}\nmax=0,\d{3}\nsum=0,\d{3}/
+            sb.toString() ==~ /Benchmarking 100 iterations done; Res:\n min=0[,.]\d{3}\navg=0[,.]\d{3}\nmax=0[,.]\d{3}\nsum=0[,.]\d{3}/
             res
     }
 }

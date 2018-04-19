@@ -20,33 +20,33 @@ class ProgressLoggerTest extends Specification {
 	final resList = []
 	Closure listWrite = { synchronized (resList) {resList.add(it)} }
 
-	public static String digitsListResultRegexp = /Process \[Integer\] #1 from 5 \(20,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[Integer\] #2 from 5 \(40,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\). Estimated items: 3, time: \d+,\d{3}
-Process \[Integer\] #3 from 5 \(60,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\). Estimated items: 2, time: \d+,\d{3}
-Process \[Integer\] #4 from 5 \(80,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\). Estimated items: 1, time: \d+,\d{3}
-Process \[Integer\] #5 from 5 \(100,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
+	public static String digitsListResultRegexp = /Process \[Integer\] #1 from 5 \(20[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[Integer\] #2 from 5 \(40[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 3, time: \d+[,.]\d{3}
+Process \[Integer\] #3 from 5 \(60[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 2, time: \d+[,.]\d{3}
+Process \[Integer\] #4 from 5 \(80[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 1, time: \d+[,.]\d{3}
+Process \[Integer\] #5 from 5 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
 /
 
 	/**
 	 * Stream opposite to list does not known amount of elements on start
 	 */
-	public static String digitsStreamResultRegexpUnknownTotalAmount = /Process \[item\] #1\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[item\] #2\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[item\] #3\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[item\] #4\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[item\] #5\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
+	public static String digitsStreamResultRegexpUnknownTotalAmount = /Process \[item\] #1\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[item\] #2\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[item\] #3\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[item\] #4\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[item\] #5\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
 /
 
-	public static String objectsStreamResultRegexpWithUnknownTotalAmount = /Process \[one\] #1\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[two\] #2\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[three\] #3\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[four\] #4\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
+	public static String objectsStreamResultRegexpWithUnknownTotalAmount = /Process \[one\] #1\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[two\] #2\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[three\] #3\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[four\] #4\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
 /
 
-	public static String objectsStreamResultRegexp = /Process \[one\] #1 from 4 \(25,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
-Process \[two\] #2 from 4 \(50,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)\. Estimated items: 2, time: \d+,\d{3}
-Process \[three\] #3 from 4 \(75,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)\. Estimated items: 1, time: \d+,\d{3}
-Process \[four\] #4 from 4 \(100,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)
+	public static String objectsStreamResultRegexp = /Process \[one\] #1 from 4 \(25[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[two\] #2 from 4 \(50[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\. Estimated items: 2, time: \d+[,.]\d{3}
+Process \[three\] #3 from 4 \(75[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\. Estimated items: 1, time: \d+[,.]\d{3}
+Process \[four\] #4 from 4 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
 /
 
 	def "each: static simple call"() {
@@ -156,10 +156,10 @@ Process \[four\] #4 from 4 \(100,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(f
 
 	def "measure: simple test"() {
 		when:
-			ProgressLogger.measure(bufferWrite, { println 'Some heavy work' }, 'Doing cool work!')
+			ProgressLogger.measure(bufferWrite, { println 'Some heavy work'; '' }, 'Doing cool work!')
 		then:
 			sb.length() > 0
-			sb ==~ /Stop processing \[Doing cool work!\] \(Total processed 1\)\. Spent: 0,\d{3}\.\n/
+			sb ==~ /Stop processing \[Doing cool work!\] \(Total processed 1\)\. Spent: 0[,.]\d{3}\.\n/
 	}
 
 	def 'measure() with object result from closure'(){
@@ -207,19 +207,19 @@ Process \[four\] #4 from 4 \(100,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(f
 				list.eachParallel{
 					++pl
 					sleep 100
-				};
+				}
 			}
 		then:
 			resList.find{
-				it ==~ /^Process \[Integer\] #1 from 10 \(10,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)\Z/
+				it ==~ /^Process \[Integer\] #1 from 10 \(10[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\Z/
 			}
 			resList.find{
-				it ==~ /^Process \[Integer\] #10 from 10 \(100,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)\Z/
+				it ==~ /^Process \[Integer\] #10 from 10 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\Z/
 			}
 
 			(list - [1, 10]).each{n->
 				assert resList.find{
-					it ==~ /^Process \[Integer\] #${n} from 10 \(${n}0,00%\)\. Spent \(pack by 1\) time: \d+,\d{3} \(from start: \d+,\d{3}\)\. Estimated items: ${10 - n}, time: \d+,\d{3}\Z/
+					it ==~ /^Process \[Integer\] #${n} from 10 \(${n}0[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\. Estimated items: ${10 - n}, time: \d+[,.]\d{3}\Z/
 				}
 			}
 	}

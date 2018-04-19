@@ -7,8 +7,10 @@ import groovy.transform.CompileStatic
  *
  * <h1>1. setFromPropertyPathLikeKey</h1>
  * First it allow operations opposite flatten, set hierarchy from string, like:
+ * <code><pre>
  * ConfigExtended conf = …
  *	conf.setFromPropertyPathLikeKey('some.deep.hierarchy.of.properties', value)
+ * </pre></code>
  * and then access it as usual:
  * conf.some.deep.hierarchy.of.properties
  * not as it is one string property.
@@ -18,6 +20,7 @@ import groovy.transform.CompileStatic
  * Additionally it override merge of ConfigObjects and do not replace completely replace Objects but set properties of it.
  * For example:
  * Standard behaviour:
+ * <pre>
  * // Uncomment next line if you are plan run example from GroovyConsole to handle defined there classes: http://groovy.329449.n5.nabble.com/GroovyConsole-and-context-thread-loader-td4471707.html
  * // Thread.currentThread().contextClassLoader = getClass().classLoader
  * @groovy.transform.ToString
@@ -35,6 +38,7 @@ import groovy.transform.CompileStatic
  *
  * config.merge(config1)
  * assert config.test.s == 's change'
+ * </pre>
  *
  * BUT stop, why config.test replaced? Our intention was to set only their field s!
  * That class do that
@@ -46,6 +50,9 @@ import groovy.transform.CompileStatic
  * @created 2015-01-03 22:10
  **/
 class ConfigExtended extends ConfigObject{
+	ConfigObject parent
+	String name
+
 	/**
 	 * Factory to do not always remember use {@see ConfigSlurper} and cast result
 	 *
@@ -153,17 +160,6 @@ class ConfigExtended extends ConfigObject{
 
 		return config;
 	}
-
-		ConfigObject parent
-		String name
-//	static class ConfigObjectParentAware extends ConfigObject{
-//
-//		ConfigObjectParentAware(URL file, ConfigObject parent, String name) {
-//			super(file)
-//			this.parent = parent
-//			this.name = name
-//		}
-//	}
 
 	/**
 	 * Overrides the default getProperty implementation to create {@see ConfigObjectParentAware} instances

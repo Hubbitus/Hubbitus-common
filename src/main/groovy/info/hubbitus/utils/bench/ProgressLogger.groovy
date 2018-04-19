@@ -110,23 +110,23 @@ class ProgressLogger {
 	/**
 	 * Constructor from known amount of executions
 	 *
-	 * @param totalAmountOfElements By default value -1 mean what total number elements is not known (f.e. tree traversal or stream
+	 * @param totalAmountOfElements By default value -1 (or null) mean what total number elements is not known (f.e. tree traversal or stream
 	 *	processing) in that case simpler statistics printed without totals and estimation
 	 * @param outMethod
 	 * @param packLogSize If null - auto adjust step. By default amount of object divided on 100 (100%, 1% at step) and then if
 	 *	such part will be executed faster than in second - redivide to 100 to decrease log overhead.
 	 * @param objName {@see FORMAT.item} by default
 	 */
-	ProgressLogger(long totalAmountOfElements = -1, Consumer outMethod = {println it}, Integer packLogSize = null, String objName = null){
-		this.totalAmountOfElements = totalAmountOfElements;
-		this.objName = (objName ?: FORMAT.item);
-		this.outMethod = outMethod;
+	ProgressLogger(Long totalAmountOfElements = null, Consumer outMethod = {println it}, Integer packLogSize = null, String objName = null){
+		this.totalAmountOfElements = totalAmountOfElements ?: -1
+		this.objName = (objName ?: FORMAT.item)
+		this.outMethod = outMethod
 		if (!packLogSize){
-			this.autoAdjust = true;
-			autoAdjustEach();
+			this.autoAdjust = true
+			autoAdjustEach()
 		}
 		else{
-			this.packLogSize = packLogSize;;
+			this.packLogSize = packLogSize
 		}
 		reset()
 	}
@@ -140,14 +140,14 @@ class ProgressLogger {
 	 * @param packLogSize
 	 */
 	ProgressLogger(Collection list, Consumer outMethod = {println it}, String objName = null, Integer packLogSize = null){
-		this( (list?.size() ?: 0), outMethod, packLogSize, (objName ?: (list?.size() ? list.get(0)?.getClass()?.simpleName : 'empty list')) );
+		this( (list?.size() ?: 0), outMethod, packLogSize, (objName ?: (list?.size() ? list.get(0)?.getClass()?.simpleName : 'empty list')) )
 	}
 
 	/**
 	 * Reset timers
 	 */
 	void reset(){
-		this.last = this.start = System.nanoTime();
+		this.last = this.start = System.nanoTime()
 	}
 
 	/**
@@ -164,10 +164,10 @@ class ProgressLogger {
 	 * @param each
 	 */
 	static void each(Collection list, Consumer doing, Consumer outMethod = {println it}, String objName = null, Integer each = null){
-		ProgressLogger pl = new ProgressLogger(list, outMethod, objName, each);
+		ProgressLogger pl = new ProgressLogger(list, outMethod, objName, each)
 		list.each{
-			pl.next();
-			doing.accept(it);
+			pl.next()
+			doing.accept(it)
 		}
 	}
 
@@ -183,8 +183,8 @@ class ProgressLogger {
 	 * @return
 	 */
 	static Spent measure(Consumer outMethod, Supplier execute, String objName = '', String beginMessage = null, String additionalEndMessage = ''){
-		if (beginMessage) outMethod.accept(beginMessage);
-		ProgressLogger pl = new ProgressLogger(1, outMethod, -1, '');
+		if (beginMessage) outMethod.accept(beginMessage)
+		ProgressLogger pl = new ProgressLogger(1, outMethod, -1, '')
 		if (objName) pl.objName = objName;
 		def execRes = execute.get();
 		Spent spent = pl.stop(additionalEndMessage ?: execRes.toString());

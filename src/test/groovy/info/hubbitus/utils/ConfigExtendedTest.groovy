@@ -84,5 +84,12 @@ class ConfigExtendedTest extends Specification {
         then:
             noExceptionThrown()
             configExtended.notExistent instanceof List
+            configExtended.notExistent == ['list value']
+
+        when:
+            configExtended.notExistent << 'list value2'
+        then:
+
+            configExtended.notExistent == ['list value', 'list value2']
     }
 }

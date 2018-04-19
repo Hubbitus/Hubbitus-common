@@ -143,7 +143,31 @@ became just:
 
 and result identical!
 
+## GlobalConfig singleton for easy access configuration from resources
+
+Singleton class for automatically load `Config.groovy` or `config.groovy` config from current resources and dispose them as singleton.
+
+Idea to simplify access you configuration in simple scripts application when no IOC/DI used.
+F.e. in resources you have file `Config.groovy` with content:
+
+    config {
+        some {
+            property = 'qwerty'
+        }
+    }
+
+Then you may just do in script *without any initialization*:
+
+    println GlobalConfig.instance.some.property
+
+Please note, file must include config{} closure on top level which will be stripped automatically.
+
 # Changelog
+## version 1.5 2018-04-19 19:35
+* Add class `GlobalConfig` for easy access configuration from resources.
+* Update gradlew version to 4.7.
+* Adopt test to be locale independent.
+
 ## version 1.4 2017-11-29 23:30
 * Add test `info.hubbitus.utils.ConfigExtendedTest`
 * Add method `info.hubbitus.utils.ConfigExtended.setFromPropertyPathLikeKey(java.lang.String, java.lang.String)` to do not always quote `String` values
