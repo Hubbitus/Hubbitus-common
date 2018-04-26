@@ -3,6 +3,7 @@ package info.hubbitus.utils.bench
 import groovyx.gpars.GParsPool
 import spock.lang.Specification
 
+import java.util.function.Consumer
 import java.util.function.Supplier
 
 /**
@@ -222,5 +223,16 @@ Process \[four\] #4 from 4 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{
 					it ==~ /^Process \[Integer\] #${n} from 10 \(${n}0[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\. Estimated items: ${10 - n}, time: \d+[,.]\d{3}\Z/
 				}
 			}
+	}
+
+	def measureAndLogTimeTest(){
+		when:
+			def result = ProgressLogger.measureAndLogTime({spent-> bufferWrite('Operation took: ' + spent) }){
+				println 'test' // Some long measured work
+				return 42
+			}
+		then:
+			42 == result
+			sb ==~ /Operation took: 0[,.]\d{3}\n42\n/
 	}
 }

@@ -184,12 +184,34 @@ class ProgressLogger {
 	 */
 	static Spent measure(Consumer outMethod, Supplier execute, String objName = '', String beginMessage = null, String additionalEndMessage = ''){
 		if (beginMessage) outMethod.accept(beginMessage)
-		ProgressLogger pl = new ProgressLogger(1, outMethod, -1, '')
-		if (objName) pl.objName = objName;
-		def execRes = execute.get();
-		Spent spent = pl.stop(additionalEndMessage ?: execRes.toString());
-		spent.info = (additionalEndMessage ?: execRes);
-		return spent;
+		ProgressLogger pl = new ProgressLogger(1, outMethod, -1, (objName?:''))
+		def execRes = execute.get()
+		Spent spent = pl.stop(additionalEndMessage ?: execRes.toString())
+		spent.info = (additionalEndMessage ?: execRes)
+		return spent
+	}
+
+	/**
+	 * Method to measure single invocation, log spent time and return process result of actual work
+	 * In most cases we want just execute single statement and log spent time result. It is easy with that method like:
+	 * def result = ProgressLogger.measureAndLogTime({spentTime-> bufferWrite('Operation took: ' + spentTime) } ){
+	 * 		println 'test' // Some long measured work
+	 * 		return 42
+	 * 	}
+	 * assert 42 == result
+	 *
+	 * @param spentTimeLogger
+	 * @param execute
+	 * @return
+	 */
+	static def measureAndLogTime(Consumer<Spent> spentTimeLogger, Supplier execute){
+		ProgressLogger pl = new ProgressLogger(1, {}, -1, '')
+		def execRes = execute.get()
+		Spent spent = pl.stop()
+		spent.info = execRes
+		spentTimeLogger.accept(spent)
+
+		return execRes
 	}
 
 	/**
@@ -198,9 +220,9 @@ class ProgressLogger {
 	 * @param currentElementNo
 	 */
 	private void logProgress(long currentElementNo, String iterationName = null){
-		lastPackSpentNs = System.nanoTime() - last;
-		spentFromStartNs = System.nanoTime() - start;
-		leaved = this.totalAmountOfElements - currentElementNo;
+		lastPackSpentNs = System.nanoTime() - last
+		spentFromStartNs = System.nanoTime() - start
+		leaved = this.totalAmountOfElements - currentElementNo
 
 		if ( ! (currentElementNo % packLogSize) || currentElementNo == this.totalAmountOfElements || 1 == currentElementNo){ // First, last and by pack of 'packLogSize' amount of elements
 			outMethod.accept(
@@ -217,8 +239,8 @@ class ProgressLogger {
 					,_FORMAT: _FORMAT // For Estimation online add
 				).toString() // .toString for compatibility with Java methods, passed by ref
 			);
-			last = System.nanoTime();
-			autoAdjust();
+			last = System.nanoTime()
+			autoAdjust()
 		}
 	}
 
@@ -301,28 +323,27 @@ class ProgressLogger {
 	 * @param iterationName
 	 */
 	void next(String iterationName){
-		logProgress(current.incrementAndGet(), iterationName);
+		logProgress(current.incrementAndGet(), iterationName)
 	}
 
 	/**
 	 * Adjust elements batch size automatically to do not SPAM log
 	 */
-	synchronized void autoAdjust(){
+	synchronized private void autoAdjust(){
 		if (autoAdjust && current.get() > 2 && lastPackSpentNs / (10 ** 9) < 1){
-			this.autoAdjustFactor = 10;
-			autoAdjustEach();
+			this.autoAdjustFactor = 10
+			autoAdjustEach()
 		}
 	}
 
 	synchronized private void autoAdjustEach(){
 		this.packLogSize = this.totalAmountOfElements / autoAdjustFactor;
 			if (packLogSize in [0, 1]){
-				packLogSize = 1;
-				return;
+				packLogSize = 1
+				return
 			}
-		int roundFactor = 10 ** (Math.ceil(Math.log10(packLogSize)) - 1);
-//		println "Adjusting: ${autoAdjust}; autoAdjustFactor=${autoAdjustFactor}; current=${current}; lastPackSpentNs(sec)=${lastPackSpentNs / (10 ** 9)}; packLogSize=${packLogSize}; roundFactor=${roundFactor}";
+		int roundFactor = 10 ** (Math.ceil(Math.log10(packLogSize)) - 1)
 		// Round up to 10 ** N - 1. F.e. 15 will be rounded to 20, 234 to 300, 5678 to 5000
-		this.packLogSize = ( Math.ceil(packLogSize / roundFactor) * roundFactor ?: 1 );
+		this.packLogSize = ( Math.ceil(packLogSize / roundFactor) * roundFactor ?: 1 )
 	}
 }

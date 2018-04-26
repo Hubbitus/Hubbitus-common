@@ -1,6 +1,7 @@
 package info.hubbitus.utils.bench
 
 import groovy.transform.CompileStatic
+import groovy.transform.ToString
 
 import java.math.RoundingMode
 
@@ -20,8 +21,8 @@ import java.math.RoundingMode
  */
 @CompileStatic
 public class Spent implements Comparable<Spent>{
-	long spent; // Nanoseconds
-	def info;
+	long spent // Nanoseconds
+	def info
 
 	@Lazy private String spentStr = formatTimeElapsedSinceNanosecond(spent);
 
@@ -29,7 +30,7 @@ public class Spent implements Comparable<Spent>{
 	 * Do not format anything if it less than 1 minute by default
 	 * Nanoseconds.
 	 */
-	static long MINIMUM_SPENT_FOR_FORMATTING = 60000;
+	static long MINIMUM_SPENT_FOR_FORMATTING = 60000
 
 	/**
 	 * Constructor from amount of nanoseconds
@@ -37,7 +38,7 @@ public class Spent implements Comparable<Spent>{
 	 * @param spent
 	 */
 	public Spent(long spent){
-		this.spent = spent;
+		this.spent = spent
 	}
 
 	/**
@@ -51,31 +52,31 @@ public class Spent implements Comparable<Spent>{
 
 		if(nanosDiff / (10 ** 6) <= MINIMUM_SPENT_FOR_FORMATTING){ return sprintf('%.3f', (nanosDiff / (10 ** 9)).setScale(3, RoundingMode.HALF_UP)) }
 
-		String formattedTime = '';
-		long secondInNanos = (long)(10 ** 9); // Explicit casting only for @CompileStatic
-		long minuteInNanos = secondInNanos * 60;
-		long hourInNanos = minuteInNanos * 60;
-		long dayInNanos = hourInNanos * 24;
-		long weekInNanos = dayInNanos * 7;
-		long monthInNanos = dayInNanos * 30;
+		String formattedTime = ''
+		long secondInNanos = (long)(10 ** 9) // Explicit casting only for @CompileStatic
+		long minuteInNanos = secondInNanos * 60
+		long hourInNanos = minuteInNanos * 60
+		long dayInNanos = hourInNanos * 24
+		long weekInNanos = dayInNanos * 7
+		long monthInNanos = dayInNanos * 30
 
-		List timeElapsed = [];
+		List timeElapsed = []
 		// Define time units - plural cases are handled inside loop
 		List timeElapsedText = [
 			'secs', 'mins', 'hours', 'days', 'weeks', 'months' // @TODO add formatting and/or internationalization support
-		];
+		]
 
-		timeElapsed[5] = (int) (nanosDiff / monthInNanos);	// months
+		timeElapsed[5] = (int) (nanosDiff / monthInNanos)	// months
 		nanosDiff %= monthInNanos;
-		timeElapsed[4] = (int) (nanosDiff / weekInNanos);	// weeks
-		nanosDiff %= weekInNanos;
-		timeElapsed[3] = (int) (nanosDiff / dayInNanos);	// days
-		nanosDiff %= dayInNanos;
-		timeElapsed[2] = (int) (nanosDiff / hourInNanos);	// hours
-		nanosDiff %= hourInNanos;
-		timeElapsed[1] = (int) (nanosDiff / minuteInNanos);	// minutes
-		nanosDiff %= minuteInNanos;
-		timeElapsed[0] = sprintf('%.3f', (nanosDiff / secondInNanos).setScale(3, RoundingMode.HALF_UP));	// seconds
+		timeElapsed[4] = (int) (nanosDiff / weekInNanos)	// weeks
+		nanosDiff %= weekInNanos
+		timeElapsed[3] = (int) (nanosDiff / dayInNanos)	// days
+		nanosDiff %= dayInNanos
+		timeElapsed[2] = (int) (nanosDiff / hourInNanos)	// hours
+		nanosDiff %= hourInNanos
+		timeElapsed[1] = (int) (nanosDiff / minuteInNanos)	// minutes
+		nanosDiff %= minuteInNanos
+		timeElapsed[0] = sprintf('%.3f', (nanosDiff / secondInNanos).setScale(3, RoundingMode.HALF_UP))	// seconds
 
 		// Only adds 3 significant high valued units
 		int i = (timeElapsed.size()-1);
@@ -84,25 +85,25 @@ public class Spent implements Comparable<Spent>{
 			if(timeElapsed[i] != 0){
 				formattedTime += ((j>0)? ", " :"") \
 					+ timeElapsed[i] \
-					+ " " + timeElapsedText[i];
-				++j;
+					+ " " + timeElapsedText[i]
+				++j
 			}
 		} // end for - build string
 
-		return formattedTime;
+		return formattedTime
 	}
 
 	public Spent plus(Spent other){
-		this.spent += other.spent;
-		return this;
+		this.spent += other.spent
+		return this
 	}
 
 	public String toString(){
-		return spentStr + (info ? "\n$info" : '');
+		return spentStr + (info ? "\n$info" : '')
 	}
 
 	@Override
 	int compareTo(Spent other) {
-		(other.spent <=> this.spent);
+		(other.spent <=> this.spent)
 	}
 }

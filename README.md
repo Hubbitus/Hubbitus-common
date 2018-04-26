@@ -55,6 +55,14 @@ for (Object aisObj in aisList){
 ```groovy
 ProgressLogger.measure({log.info(it)}, { /* long work  * / }, 'Doing cool work')
 ```
+Or:
+```groovy
+def result = ProgressLogger.measureAndLogTime({spent-> log.debug('Operation took: ' + spent) }){
+	println 'test' // Some long measured work
+	return 42
+}
+assert 42 == result
+```
 6. When amount of elements or iterations is not known (f.e. stream processing or recursive calls like tree traversal)
 totalAmountOfElements set to -1 and simpler statistic returned:
 ```groovy
@@ -163,6 +171,9 @@ Then you may just do in script *without any initialization*:
 Please note, file must include config{} closure on top level which will be stripped automatically.
 
 # Changelog
+## version 1.6 2018-04-26 16:14
+* Add method `ProgressLogger.measureAndLogTime`
+
 ## version 1.5 2018-04-19 19:35
 * Add class `GlobalConfig` for easy access configuration from resources.
 * Update gradlew version to 4.7.
