@@ -5,7 +5,6 @@ import groovy.text.Template
 
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
-import java.util.function.Function
 import java.util.function.Supplier
 
 /**
@@ -71,7 +70,7 @@ import java.util.function.Supplier
  */
 class ProgressLogger {
 	/**
-	 * You may with configure prefix to start line from "Run", 'Testing', 'Run test' and so on
+	 * You may wish configure prefix to start line from "Run", 'Testing', 'Run test' and so on
 	 */
 	String processName = 'Process';
 
@@ -100,7 +99,9 @@ class ProgressLogger {
 	int packLogSize;
 	String objName;
 	private AtomicLong current = new AtomicLong(0);
-	/** Consumer nor Closure to interoperability with pure Java uses! **/
+	/**
+	 * Consumer not Closure to interoperability with pure Java uses!
+	 **/
 	private Consumer outMethod;
 
 	long lastPackSpentNs;
@@ -208,7 +209,6 @@ class ProgressLogger {
 		ProgressLogger pl = new ProgressLogger(1, {}, -1, '')
 		def execRes = execute.get()
 		Spent spent = pl.stop()
-		spent.info = execRes
 		spentTimeLogger.accept(spent)
 
 		return execRes
@@ -252,10 +252,10 @@ class ProgressLogger {
 	 * @return
 	 */
 	Spent stop(String additionalResultInformation = ''){
-		Spent spent = new Spent(System.nanoTime() - start);
+		Spent spent = new Spent(System.nanoTime() - start)
 
-		outMethod.accept(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current.incrementAndGet()).toString());
-		spent;
+		outMethod.accept(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current.incrementAndGet()).toString())
+		spent
 	}
 
 	/**
