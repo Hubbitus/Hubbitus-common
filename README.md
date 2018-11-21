@@ -171,6 +171,10 @@ Then you may just do in script *without any initialization*:
 Please note, file must include config{} closure on top level which will be stripped automatically.
 
 # Changelog
+## version 1.7 2018-11-21 22:56
+* Improve GlobalConfig to log warning when config not found, make more robust
+* Minor test fir
+
 ## version 1.6 2018-04-26 16:14
 * Add method `ProgressLogger.measureAndLogTime`
 

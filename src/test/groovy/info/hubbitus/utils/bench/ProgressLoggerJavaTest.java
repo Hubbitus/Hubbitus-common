@@ -79,6 +79,6 @@ public class ProgressLoggerJavaTest extends Assert {
 			}
 		);
 		assertEquals(42, result);
-		assertThat(sb.toString(), matchesPattern("Operation took: 0[,.]\\d{3}\n42\n"));
+		assertThat(sb.toString(), matchesPattern("Operation took: 0[,.]\\d{3}\n"));
 	}
 }

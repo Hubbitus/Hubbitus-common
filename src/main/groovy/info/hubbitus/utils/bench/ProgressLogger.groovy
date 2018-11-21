@@ -224,7 +224,7 @@ class ProgressLogger {
 		spentFromStartNs = System.nanoTime() - start
 		leaved = this.totalAmountOfElements - currentElementNo
 
-		if ( ! (currentElementNo % packLogSize) || currentElementNo == this.totalAmountOfElements || 1 == currentElementNo){ // First, last and by pack of 'packLogSize' amount of elements
+		if ( ! (currentElementNo % packLogSize) || currentElementNo == this.totalAmountOfElements || 1L == currentElementNo){ // First, last and by pack of 'packLogSize' amount of elements
 			outMethod.accept(
 				(-1L == totalAmountOfElements ? _FORMAT.progress_total_unknown : _FORMAT.progress).make(
 					processName: processName

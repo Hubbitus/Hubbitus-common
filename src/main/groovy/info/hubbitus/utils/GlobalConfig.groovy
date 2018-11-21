@@ -1,6 +1,6 @@
 package info.hubbitus.utils
 
-import info.hubbitus.utils.ConfigExtended
+import groovy.util.logging.Slf4j
 
 /**
  * Singleton class to automatically load `Config.groovy` or `config.groovy` config from current resources and dispose them as singleton.
@@ -27,16 +27,20 @@ import info.hubbitus.utils.ConfigExtended
  * @author Pavel Alexeev.
  * @since 2018-04-19 12:21.
  */
+@Slf4j
 @Singleton(lazy=true, strict=false)
 class GlobalConfig {
 	@Delegate
 	ConfigExtended config
 
 	GlobalConfig() {
-		this.@config = (ConfigExtended)new ConfigSlurper().parse(
-			['/Config.groovy', '/config.groovy'].findResult {
-				this.getClass().getResource(it)
-			}
-		).config
+		def config = ['/Config.groovy', '/config.groovy'].findResult{
+			getClass().getResource(it)
+		}
+		if (!config){
+			log.error("Config files '/Config.groovy' or '/config.groovy' not found in the classpath! Init with empty.")
+			this?.@config = new ConfigExtended()
+		}
+		this?.@config = (ConfigExtended)(new ConfigSlurper().parse(config).config)
 	}
 }

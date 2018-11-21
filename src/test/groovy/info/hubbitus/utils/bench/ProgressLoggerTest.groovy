@@ -233,6 +233,6 @@ Process \[four\] #4 from 4 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{
 			}
 		then:
 			42 == result
-			sb ==~ /Operation took: 0[,.]\d{3}\n42\n/
+			sb ==~ /Operation took: 0[,.]\d{3}\n/
 	}
 }
