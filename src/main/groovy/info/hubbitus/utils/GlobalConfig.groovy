@@ -40,6 +40,7 @@ class GlobalConfig {
 		if (!config){
 			log.error("Config files '/Config.groovy' or '/config.groovy' not found in the classpath! Init with empty.")
 			this?.@config = new ConfigExtended()
+			return
 		}
 		this?.@config = (ConfigExtended)(new ConfigSlurper().parse(config).config)
 	}

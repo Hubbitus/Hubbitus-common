@@ -24,12 +24,9 @@ public class ProgressLoggerJavaTest extends Assert {
 		List list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 		ProgressLogger pl = new ProgressLogger(
 			list
-			,new Consumer() {
-				@Override
-				public void accept(Object it) {
-					System.out.println(it);
-					bufferWrite.accept(it);
-				}
+			, it -> {
+				System.out.println(it);
+				bufferWrite.accept(it);
 			}
 		);
 		list.forEach( (t) -> pl.next() );

@@ -3,7 +3,6 @@ package info.hubbitus.utils.bench
 import groovyx.gpars.GParsPool
 import spock.lang.Specification
 
-import java.util.function.Consumer
 import java.util.function.Supplier
 
 /**

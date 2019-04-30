@@ -62,6 +62,15 @@ import java.util.function.Supplier
  * }
  *</code>
  *
+ * 7) You may use it with progress when amount of elements unknown like directory traversing:
+ * <code>
+ * ProgressLogger pl = new ProgressLogger(outMethod: log.&info)
+ * 	new File('directory').traverse type: FILES, excludeNameFilter: ~/.*_config\.xml$/, {File file->
+ * 		pl.next(file as String)
+ * 		...
+ * 	}
+ * </code>
+ *
  * You are able provide result messages, custom message formatting, pack size after precessing write log, auto adjusting
  * such pack size to do not spam log, provide custom logging methods and so on.
  *
