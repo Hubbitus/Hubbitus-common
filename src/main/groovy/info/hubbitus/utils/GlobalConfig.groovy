@@ -22,8 +22,6 @@ import groovy.util.logging.Slf4j
  * </code>
  * Please note, file must include config{} closure on top level which will be stripped automatically.
  *
- * @TODO place it into Hubbitus-common after testing
- *
  * @author Pavel Alexeev.
  * @since 2018-04-19 12:21.
  */

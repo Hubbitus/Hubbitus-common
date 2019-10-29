@@ -170,6 +170,22 @@ Then you may just do in script *without any initialization*:
 
 Please note, file must include config{} closure on top level which will be stripped automatically.
 
+# Enable by Maven and gradle
+
+## Maven
+Just add dependency like:
+
+    <dependency>
+      <groupId>info.hubbitus</groupId>
+      <artifactId>Hubbitus-common</artifactId>
+      <version>1.7</version>
+    </dependency>
+
+## Gradle
+
+    compile 'info.hubbitus:Hubbitus-common:1.7'
+
+
 # Changelog
 ## version 1.7 2018-11-21 22:56
 * Improve GlobalConfig to log warning when config not found, make more robust
