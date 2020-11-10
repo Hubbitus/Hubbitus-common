@@ -27,6 +27,6 @@ jobs:
         run: ./gradlew test
       # Artifacts. Primarily to see test results
       - uses: actions/upload-artifact@v2
-          with:
-            name: Package
-            path: build
+        with:
+          name: Package
+          path: build
