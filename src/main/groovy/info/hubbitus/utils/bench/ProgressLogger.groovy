@@ -81,7 +81,7 @@ class ProgressLogger {
 	/**
 	 * You may wish configure prefix to start line from "Run", 'Testing', 'Run test' and so on
 	 */
-	String processName = 'Process';
+	String processName = 'Process'
 
 	/**
 	 * Format of messages. Allow to redefine, customize and i18n
@@ -92,30 +92,46 @@ class ProgressLogger {
 		,progress_total_unknown: '''${processName} [${objectName}] #${currentElementNo}. Spent (pack by ${packLogSize}) time: ${lastPackSpent} (from start: ${fromStartSpent})'''
 		,estimation: 'Estimated items: ${totalAmountOfElements - currentElementNo}, time: ${estimationTimeToFinish}'
 		,stop: 'Stop processing [${objectName}] (Total processed ${totalItems}). Spent: ${spent}.${additionalResultInformation ? " " + additionalResultInformation : "" }'
-	];
+	]
 
 	// Just cache created template as it used many times - and do not use @Lazy transformation to on the fly create items, and do not define it each time format added
 	private static Map<String,Template> _FORMAT = [:].withDefault{key->
-		new SimpleTemplateEngine().createTemplate((String)FORMAT."$key")
+		new SimpleTemplateEngine().createTemplate((String)(FORMAT[key]))
 	}
 
-	boolean autoAdjust = false;
-	int autoAdjustFactor = 50; // Roughly packLogSize 2% initially
+	boolean autoAdjust = false
+	int autoAdjustFactor = 50 // Roughly packLogSize 2% initially
 
-	private long start;
-	private long last;
-	private long totalAmountOfElements = -1;
-	int packLogSize;
-	String objName;
+	private long start
+	private long last
+	private long totalAmountOfElements = -1L
+	int packLogSize
+	String objName
 	private AtomicLong current = new AtomicLong(0);
 	/**
 	 * Consumer not Closure to interoperability with pure Java uses!
 	 **/
-	private Consumer outMethod;
+	private Consumer outMethod
 
-	long lastPackSpentNs;
-	long spentFromStartNs;
-	long leaved;
+	long lastPackSpentNs
+	long spentFromStartNs
+	long remaining
+
+	String getObjName(String it) {
+		if (objName_dynamic){
+			return sprintf(objName, it)
+		}
+		else return it ?: objName
+	}
+
+	private boolean objName_dynamic = false
+
+	void setObjName(String objName) {
+		if (objName.contains('%')){
+			objName_dynamic = true
+		}
+		this.objName = objName
+	}
 
 	/**
 	 * Constructor from known amount of executions
@@ -127,9 +143,9 @@ class ProgressLogger {
 	 *	such part will be executed faster than in second - redivide to 100 to decrease log overhead.
 	 * @param objName {@see FORMAT.item} by default
 	 */
-	ProgressLogger(Long totalAmountOfElements = null, Consumer outMethod = {println it}, Integer packLogSize = null, String objName = null){
-		this.totalAmountOfElements = totalAmountOfElements ?: -1
-		this.objName = (objName ?: FORMAT.item)
+	ProgressLogger(Long totalAmountOfElements = null, Consumer outMethod = System.out.&println, Integer packLogSize = null, String objName = null){
+		this.totalAmountOfElements = (totalAmountOfElements ?: -1L)
+		this.setObjName(objName ?: FORMAT.item)
 		this.outMethod = outMethod
 		if (!packLogSize){
 			this.autoAdjust = true
@@ -149,8 +165,8 @@ class ProgressLogger {
 	 * @param objName If omitted - class.simpleName of first list element used if it exists ('empty list' if list empty)
 	 * @param packLogSize
 	 */
-	ProgressLogger(Collection list, Consumer outMethod = {println it}, String objName = null, Integer packLogSize = null){
-		this( (list?.size() ?: 0), outMethod, packLogSize, (objName ?: (list?.size() ? list.get(0)?.getClass()?.simpleName : 'empty list')) )
+	ProgressLogger(Collection list, Consumer outMethod = System.out.&println, String objName = null, Integer packLogSize = null){
+		this( (list?.size() ?: 0L), outMethod, packLogSize, (objName ?: (list?.size() ? list.get(0)?.getClass()?.simpleName : 'empty list')) )
 	}
 
 	/**
@@ -162,7 +178,7 @@ class ProgressLogger {
 
 	/**
 	 * Intended to be main method to process collections:
-	 * ProgressLogger.packLogSize([1, 2, 3]){
+	 * ProgressLogger.each([1, 2, 3]){
 	 *	sleep 2000; // long operation
 	 *	println it;
 	 * }
@@ -173,11 +189,11 @@ class ProgressLogger {
 	 * @param objName
 	 * @param each
 	 */
-	static void each(Collection list, Consumer doing, Consumer outMethod = {println it}, String objName = null, Integer each = null){
+	static void each(Collection list, Consumer doing, Consumer outMethod = System.out.&println, String objName = null, Integer each = null){
 		ProgressLogger pl = new ProgressLogger(list, outMethod, objName, each)
-		list.each{
-			pl.next()
+		list.each {
 			doing.accept(it)
+			pl.next(it.toString())
 		}
 	}
 
@@ -194,7 +210,7 @@ class ProgressLogger {
 	 */
 	static Spent measure(Consumer outMethod, Supplier execute, String objName = '', String beginMessage = null, String additionalEndMessage = ''){
 		if (beginMessage) outMethod.accept(beginMessage)
-		ProgressLogger pl = new ProgressLogger(1, outMethod, -1, (objName?:''))
+		ProgressLogger pl = new ProgressLogger(1L, outMethod, -1, (objName?:''))
 		def execRes = execute.get()
 		Spent spent = pl.stop(additionalEndMessage ?: execRes.toString())
 		spent.info = (additionalEndMessage ?: execRes)
@@ -215,7 +231,7 @@ class ProgressLogger {
 	 * @return
 	 */
 	static def measureAndLogTime(Consumer<Spent> spentTimeLogger, Supplier execute){
-		ProgressLogger pl = new ProgressLogger(1, {}, -1, '')
+		ProgressLogger pl = new ProgressLogger(1L, {}, -1, '')
 		def execRes = execute.get()
 		Spent spent = pl.stop()
 		spentTimeLogger.accept(spent)
@@ -231,13 +247,13 @@ class ProgressLogger {
 	private void logProgress(long currentElementNo, String iterationName = null){
 		lastPackSpentNs = System.nanoTime() - last
 		spentFromStartNs = System.nanoTime() - start
-		leaved = this.totalAmountOfElements - currentElementNo
+		remaining = this.totalAmountOfElements - currentElementNo
 
 		if ( ! (currentElementNo % packLogSize) || currentElementNo == this.totalAmountOfElements || 1L == currentElementNo){ // First, last and by pack of 'packLogSize' amount of elements
 			outMethod.accept(
 				(-1L == totalAmountOfElements ? _FORMAT.progress_total_unknown : _FORMAT.progress).make(
 					processName: processName
-					,objectName: iterationName ?: objName
+					,objectName: getObjName(iterationName)
 					,currentElementNo: currentElementNo
 					,totalAmountOfElements: this.totalAmountOfElements
 					,percentComplete: currentElementNo / this.totalAmountOfElements * 100
@@ -263,7 +279,7 @@ class ProgressLogger {
 	Spent stop(String additionalResultInformation = ''){
 		Spent spent = new Spent(System.nanoTime() - start)
 
-		outMethod.accept(_FORMAT.stop.make(objectName: objName, spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current.incrementAndGet()).toString())
+		outMethod.accept(_FORMAT.stop.make(objectName: getObjName(), spent: spent, additionalResultInformation: additionalResultInformation, totalItems: current.incrementAndGet()).toString())
 		spent
 	}
 
@@ -274,13 +290,13 @@ class ProgressLogger {
 	 *	def pl = new ProgressLogger()
 	 * [1, 2, 3, 4].each{
 	 *	sleep 1000;
-	 *	pl.next();
+	 *	pl.next()
 	 * }
 	 * </code>
 	 * <code>
 	 *	def pl = new ProgressLogger()
 	 * [1, 2, 3, 4].each{
-	 *	++pl.next();
+	 *	++pl
 	 * }
 	 * </code>
 	 */
@@ -346,7 +362,7 @@ class ProgressLogger {
 	}
 
 	synchronized private void autoAdjustEach(){
-		this.packLogSize = this.totalAmountOfElements / autoAdjustFactor;
+		this.packLogSize = this.totalAmountOfElements / autoAdjustFactor
 			if (packLogSize in [0, 1]){
 				packLogSize = 1
 				return

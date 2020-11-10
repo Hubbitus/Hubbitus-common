@@ -187,6 +187,13 @@ Just add dependency like:
 
 
 # Changelog
+## version 1.8 2020-11-10 21:10
+* Add possibility to parametrize object name by iteration number or list value for `ProgressLogger.each` call. See `info.hubbitus.utils.bench.ProgressLoggerJavaTest.listEachStatic` for example
+* Add autotests run on CI
+* Extend testing, including:
+   - Java tests with lombok auto-created `log` fields
+* Update gradle to version 6.7, groovy to 4.0.6
+
 ## version 1.7 2018-11-21 22:56
 * Improve GlobalConfig to log warning when config not found, make more robust
 * Minor test fir
