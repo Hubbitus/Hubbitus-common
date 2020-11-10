@@ -15,12 +15,19 @@ class ProgressLoggerTest extends Specification {
 	List objectsList = ['one', 'two', 'three', 'four']
 
 	final StringBuffer sb = new StringBuffer()
-	Closure bufferWrite = { synchronized (sb) {sb.append(it).append('\n')} }
+	Closure bufferWrite = { synchronized (sb) { sb.append(it).append('\n') } }
 
-	final resList = []
+	final List resList = []
 	Closure listWrite = { synchronized (resList) {resList.add(it)} }
 
-	public static String digitsListResultRegexp = /Process \[Integer\] #1 from 5 \(20[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+	public static String digitsListResultRegexp = /Process \[1\] #1 from 5 \(20[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+Process \[2\] #2 from 5 \(40[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 3, time: \d+[,.]\d{3}
+Process \[3\] #3 from 5 \(60[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 2, time: \d+[,.]\d{3}
+Process \[4\] #4 from 5 \(80[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 1, time: \d+[,.]\d{3}
+Process \[5\] #5 from 5 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
+/
+
+	public static String digitsListObjectClassNameResultRegexp = /Process \[Integer\] #1 from 5 \(20[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)
 Process \[Integer\] #2 from 5 \(40[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 3, time: \d+[,.]\d{3}
 Process \[Integer\] #3 from 5 \(60[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 2, time: \d+[,.]\d{3}
 Process \[Integer\] #4 from 5 \(80[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\). Estimated items: 1, time: \d+[,.]\d{3}
@@ -70,7 +77,7 @@ Process \[four\] #4 from 4 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{
 				pl.next()
 			};
 		then:
-			sb ==~ digitsListResultRegexp
+			sb ==~ digitsListObjectClassNameResultRegexp
 	}
 
 	def "next: unknown amount of elements"() {
@@ -131,7 +138,7 @@ Process \[four\] #4 from 4 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{
 
 	def "next: unknown amount of elements, call next with String argument"() {
 		given:
-			ProgressLogger pl = new ProgressLogger(-1, bufferWrite);
+			ProgressLogger pl = new ProgressLogger(-1, bufferWrite)
 
 		when:
 			objectsList.each{
@@ -149,7 +156,7 @@ Process \[four\] #4 from 4 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{
 			objectsList.each{
 				pl.next it
 				sleep new Random().nextInt(100)
-			};
+			}
 		then:
 			sb ==~ objectsStreamResultRegexpWithUnknownTotalAmount.replaceAll('Process ', 'Run test ')
 	}
@@ -176,7 +183,7 @@ Process \[four\] #4 from 4 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{
 		when:
 			objectsList.each{
 				pl.next it
-			};
+			}
 		then:
 			sb ==~ objectsStreamResultRegexp
 	}
@@ -199,27 +206,31 @@ Process \[four\] #4 from 4 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{
 	 */
 	def "next: Parallel, multi-threading! iterate by collection (fixed amount of elements)"() {
 		given:
-			List list = (1..10).toList()
-			ProgressLogger pl = new ProgressLogger(list, listWrite);
+			int N = 100
+			List list = (1..N).toList()
+			ProgressLogger pl = new ProgressLogger(list, listWrite, 'Integer', 1)
 
 		when:
 			GParsPool.withPool(10){
-				list.eachParallel{
-					++pl
-					sleep 100
+				list.eachParallel {
+					pl.next {
+						sleep 10
+					}
 				}
 			}
 		then:
-			resList.find{
-				it ==~ /^Process \[Integer\] #1 from 10 \(10[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\Z/
+			// First (please note lines unordered!)
+			resList.find {
+				it ==~ /^Process \[Integer] #1 from 100 \(1[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\Z/
 			}
+			// Last
 			resList.find{
-				it ==~ /^Process \[Integer\] #10 from 10 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\Z/
+				it ==~ /^Process \[Integer] #100 from 100 \(100[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\Z/
 			}
 
-			(list - [1, 10]).each{n->
+			(list - [1, N]).each{n-> // All middle lines
 				assert resList.find{
-					it ==~ /^Process \[Integer\] #${n} from 10 \(${n}0[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\. Estimated items: ${10 - n}, time: \d+[,.]\d{3}\Z/
+					it ==~ /^Process \[Integer\] #${n} from ${N} \(${n}[,.]00%\)\. Spent \(pack by 1\) time: \d+[,.]\d{3} \(from start: \d+[,.]\d{3}\)\. Estimated items: ${N - n}, time: \d+[,.]\d{3}\Z/
 				}
 			}
 	}

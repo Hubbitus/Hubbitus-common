@@ -1,14 +1,16 @@
 package info.hubbitus.utils.bench;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-import groovy.util.logging.Slf4j;
+import lombok.extern.slf4j.Slf4j;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import static com.jcabi.matchers.RegexMatchers.matchesPattern;
+import static java.util.Arrays.asList;
 
 /**
  * @author Pavel Alexeev.
@@ -16,12 +18,17 @@ import static com.jcabi.matchers.RegexMatchers.matchesPattern;
  */
 @Slf4j
 public class ProgressLoggerJavaTest extends Assert {
-	private final StringBuffer sb = new StringBuffer();
-	private Consumer bufferWrite = (it) -> sb.append(it).append('\n');
+	private StringBuffer sb;
+	private final Consumer<Object> bufferWrite = (it) -> sb.append(it).append('\n');
+
+	@Before
+	public void bufferInit(){
+		sb = new StringBuffer();
+	}
 
 	@Test
 	public void testWithImplicitCreateConsumer(){
-		List list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+		List<Integer> list = asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 		ProgressLogger pl = new ProgressLogger(
 			list
 			, it -> {
@@ -31,7 +38,7 @@ public class ProgressLoggerJavaTest extends Assert {
 		);
 		list.forEach( (t) -> pl.next() );
 
-		assertThat(sb.toString(), matchesPattern("(?ms)^Process \\[Integer\\] #1 from 10 \\(10[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\n" +
+		MatcherAssert.assertThat(sb.toString(), matchesPattern("(?ms)^Process \\[Integer\\] #1 from 10 \\(10[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\n" +
 			"Process \\[Integer\\] #2 from 10 \\(20[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 8, time: \\d+[,.]\\d{3}\n" +
 			"Process \\[Integer\\] #3 from 10 \\(30[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 7, time: \\d+[,.]\\d{3}\n" +
 			"Process \\[Integer\\] #4 from 10 \\(40[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 6, time: \\d+[,.]\\d{3}\n" +
@@ -45,15 +52,15 @@ public class ProgressLoggerJavaTest extends Assert {
 	}
 
 	@Test
-	public void testWithLambda(){
-		List list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+	public void testWithLambdaConsumer(){
+		List<Integer> list = asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 		ProgressLogger pl = new ProgressLogger(
 			list
-			, it -> bufferWrite.accept(it)
+			,bufferWrite
 		);
 		list.forEach( (t) -> pl.next() );
 
-		assertThat(sb.toString(), matchesPattern("(?ms)^Process \\[Integer\\] #1 from 10 \\(10[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\n" +
+		MatcherAssert.assertThat(sb.toString(), matchesPattern("(?ms)^Process \\[Integer\\] #1 from 10 \\(10[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\n" +
 			"Process \\[Integer\\] #2 from 10 \\(20[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 8, time: \\d+[,.]\\d{3}\n" +
 			"Process \\[Integer\\] #3 from 10 \\(30[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 7, time: \\d+[,.]\\d{3}\n" +
 			"Process \\[Integer\\] #4 from 10 \\(40[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 6, time: \\d+[,.]\\d{3}\n" +
@@ -76,6 +83,42 @@ public class ProgressLoggerJavaTest extends Assert {
 			}
 		);
 		assertEquals(42, result);
-		assertThat(sb.toString(), matchesPattern("Operation took: 0[,.]\\d{3}\n"));
+		MatcherAssert.assertThat(sb.toString(), matchesPattern("Operation took: 0[,.]\\d{3}\n"));
+	}
+
+	@Test
+	public void listProcessWithLombokLog(){
+		List<Integer> list = asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+		ProgressLogger pl = new ProgressLogger(list, (Consumer<String>)(log::info));
+		list.forEach( (t) -> pl.next() );
+	}
+
+	@Test
+	public void listEachStatic(){
+		ProgressLogger.each(asList("one", "two", 3, 4, 5), (it) -> {
+			// Useful operation on each element of list
+			System.out.println(it);
+			bufferWrite.accept(it);
+		}, (Consumer<String>)log::info
+		,null
+		,1
+		);
+
+		assertEquals(sb.toString(), "one\ntwo\n3\n4\n5\n");
+	}
+
+	@Test
+	public void listEachStaticDynamicItemName(){
+		ProgressLogger.each(asList("one", "two", 3, 4, 5), (it) -> {
+			// Useful operation on each element of list
+			System.out.println("Process: " + it);
+		}, bufferWrite, "item <%s>");
+
+		MatcherAssert.assertThat(sb.toString(), matchesPattern("(?ms)^Process \\[item <one>\\] #1 from 5 \\(20[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\n" +
+			"Process \\[item <two>\\] #2 from 5 \\(40[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 3, time: \\d+[,.]\\d{3}\n" +
+			"Process \\[item <3>\\] #3 from 5 \\(60[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 2, time: \\d+[,.]\\d{3}\n" +
+			"Process \\[item <4>\\] #4 from 5 \\(80[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\\. Estimated items: 1, time: \\d+[,.]\\d{3}\n" +
+			"Process \\[item <5>\\] #5 from 5 \\(100[,.]00%\\)\\. Spent \\(pack by 1\\) time: \\d+[,.]\\d{3} \\(from start: \\d+[,.]\\d{3}\\)\n")
+		);
 	}
 }
