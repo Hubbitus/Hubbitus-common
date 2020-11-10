@@ -23,6 +23,10 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Gradle test
+        shell: bash
+        env:
+          ossrhUsername: ${{ secrets.ossrhUsername }}
+          ossrhPassword: ${{ secrets.ossrhPassword }}
         run: ./gradlew test
       # Artifacts. Primarily to see test results
       - uses: actions/upload-artifact@v2

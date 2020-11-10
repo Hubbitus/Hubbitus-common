@@ -111,6 +111,11 @@ signing {
 	sign configurations.archives
 }
 
+// Direct variables will read f.e. from ~/.gradle/gradle.properties - read env for CI
+ext{
+	ossrhUsername = project.hasProperty('ossrhUsername') ? ossrhUsername : System.env.ossrhUsername
+	ossrhPassword = project.hasProperty('ossrhPassword') ? ossrhPassword : System.env.ossrhPassword
+}
 
 uploadArchives {
 	repositories {
